@@ -1,35 +1,11 @@
+#include <string.h>
 #include <algorithm>
 #include "File/IPlatformFile.h"
 #include "Log/IPlatformLog.h"
 
-std::atomic<uint64_t> IPlatformLog::_id(0);
+std::atomic<uint64_t> PlatformLog::_id(0);
 
-void PBLogCbDefault(EPlatformLogLevel level, const char *fmt, va_list vl)
-{
-	vprintf(fmt, vl);
-	printf("\n");
-}
-
-static void(*pBLogCb)(EPlatformLogLevel level, const char *fmt, va_list vl) = PBLogCbDefault;
-
-void SetPlatformBaseLogSetCallback(void(*cb)(EPlatformLogLevel level, const char *fmt, va_list vl))
-{
-	pBLogCb = cb;
-}
-
-void PBLogOut(EPlatformLogLevel level, const char *fmt, ...)
-{
-	va_list vl;
-	va_start(vl, fmt);
-	void(*cb)(EPlatformLogLevel level, const char *fmt, va_list vl) = pBLogCb;
-	if (cb)
-	{
-		cb(level, fmt, vl);
-	}
-	va_end(vl);
-}
-
-IPlatformLog::IPlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, uint64_t maxLogSize, uint64_t maxQueLen)
+PlatformLog::PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, uint64_t maxLogSize, uint64_t maxQueLen)
 	: _logCtxDummy(0, PL_LEVEL_DEBUG, true, NULL, 0, NULL)
 {
 	if (logPath)
@@ -94,22 +70,24 @@ IPlatformLog::IPlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs,
 
 	_logCtxTail = &_logCtxDummy;
 	_logCtxCnt = 0;
+
+	_contentBuf.resize(1);
 }
 
-IPlatformLog::~IPlatformLog()
+PlatformLog::~PlatformLog()
 {
 	Stop();
 
-	IPlatformLogCtx *head = _logCtxDummy.GetNext();
+	PlatformLogCtx *head = _logCtxDummy.GetNext();
 	while (head)
 	{
-		IPlatformLogCtx *oldLogCtx = head;
+		PlatformLogCtx *oldLogCtx = head;
 		head = head->GetNext();
 		delete oldLogCtx;
 	}
 }
 
-bool IPlatformLog::Start()
+bool PlatformLog::Start()
 {
 	if (_isRunning)
 	{
@@ -122,7 +100,7 @@ bool IPlatformLog::Start()
 	return true;
 }
 
-void IPlatformLog::Stop()
+void PlatformLog::Stop()
 {
 	if (!_isRunning)
 	{
@@ -138,7 +116,7 @@ void IPlatformLog::Stop()
 	}
 }
 
-void IPlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *fmt, va_list vl)
+void PlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *fmt, va_list vl)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 	if (_logCtxCnt >= _maxQueLen)
@@ -169,13 +147,13 @@ void IPlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const 
 	}
 
 	++_id;
-	IPlatformLogCtx *logCtx = new IPlatformLogCtx(_id, level, needPrintScreen, fileName, fileLine, &_contentBuf[0]);
+	PlatformLogCtx *logCtx = new PlatformLogCtx(_id, level, needPrintScreen, fileName, fileLine, &_contentBuf[0]);
 	_logCtxTail->SetNext(logCtx);
 	_logCtxTail = logCtx;
 	++_logCtxCnt;
 }
 
-void IPlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
+void PlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
 
@@ -186,13 +164,13 @@ void IPlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const 
 	}
 
 	++_id;
-	IPlatformLogCtx *logCtx = new IPlatformLogCtx(_id, level, needPrintScreen, fileName, fileLine, content);
+	PlatformLogCtx *logCtx = new PlatformLogCtx(_id, level, needPrintScreen, fileName, fileLine, content);
 	_logCtxTail->SetNext(logCtx);
 	_logCtxTail = logCtx;
 	++_logCtxCnt;
 }
 
-void IPlatformLog::Update(const IPlatformLogCtx *logCtx)
+void PlatformLog::Update(const PlatformLogCtx *logCtx)
 {
 	std::chrono::hours logHours = std::chrono::duration_cast<std::chrono::hours>(logCtx->GetTime().time_since_epoch());
 
@@ -237,7 +215,7 @@ static void ClearLog(SPlatformFileInfo *fileInfo, uint64_t &clearSize)
 	}
 }
 
-void IPlatformLog::DoClear()
+void PlatformLog::DoClear()
 {
 	SPlatformFileInfo *fileInfo = GetFileInfo(_logPath.c_str(), PF_SORT_MODE_MODIFY_TIME);
 	if (!fileInfo)
@@ -255,13 +233,13 @@ void IPlatformLog::DoClear()
 	FreeFileInfo(&fileInfo);
 }
 
-void IPlatformLog::WorkThreadEntry(void *hdl)
+void PlatformLog::WorkThreadEntry(void *hdl)
 {
-	IPlatformLog *h = (IPlatformLog *)hdl;
+	PlatformLog *h = (PlatformLog *)hdl;
 	return h->WorkThread();
 }
 
-void IPlatformLog::WorkThread()
+void PlatformLog::WorkThread()
 {
 	std::chrono::time_point<std::chrono::steady_clock> nowTime = std::chrono::steady_clock::now();
 	std::chrono::time_point<std::chrono::steady_clock> nextSpanTime = nowTime + std::chrono::milliseconds(_spanMs);
@@ -278,12 +256,12 @@ void IPlatformLog::WorkThread()
 			nextSpanTime = nowTime;
 			if (nowTime > nextClearTime)
 			{
-				nextClearTime = nowTime;
+				nextClearTime = nowTime + std::chrono::milliseconds(_spanMs);
 			}
 		}
 
 		_mutex.lock();
-		IPlatformLogCtx *logCtx = _logCtxDummy.GetNext();
+		PlatformLogCtx *logCtx = _logCtxDummy.GetNext();
 		_logCtxDummy.SetNext(NULL);
 
 		_logCtxTail = &_logCtxDummy;
@@ -301,7 +279,7 @@ void IPlatformLog::WorkThread()
 			Update(logCtx);
 			logCtx->PrintFile(_fp);
 
-			IPlatformLogCtx *oldLogCtx = logCtx;
+			PlatformLogCtx *oldLogCtx = logCtx;
 			logCtx = logCtx->GetNext();
 			delete oldLogCtx;
 		}
@@ -321,3 +299,62 @@ void IPlatformLog::WorkThread()
 		nextSpanTime += std::chrono::milliseconds(_spanMs);
 	}
 }
+
+/******************************  C API START  ******************************/
+PlatformLogHandle PlatformLogCreate(const char *logPath, int64_t spanMs, int64_t clearMs, int64_t maxLogSize)
+{
+	PlatformLog *h = new PlatformLog(logPath, spanMs, clearMs, maxLogSize, 10000);
+	h->Start();
+
+	return h;
+}
+
+void PlatformLogDestroy(PlatformLogHandle *hdl)
+{
+	if ((!hdl) || (!(*hdl)))
+	{
+		return;
+	}
+
+	PlatformLog *h = (PlatformLog *)(*hdl);
+	delete h;
+
+	*hdl = NULL;
+}
+
+void PlatformLogSend(PlatformLogHandle hdl, EPlatformLogLevel level, int needPrintScreen, const char *fileName, int fileLine, const char *fmt, ...)
+{
+	PlatformLog *h = (PlatformLog *)hdl;
+	if (!h)
+	{
+		return;
+	}
+
+	va_list vl;
+	va_start(vl, fmt);
+	h->SendLog(level, needPrintScreen, fileName, fileLine, fmt, vl);
+	va_end(vl);
+}
+
+void PlatformLogSendVa(PlatformLogHandle hdl, EPlatformLogLevel level, int needPrintScreen, const char *fileName, int fileLine, const char *fmt, va_list vl)
+{
+	PlatformLog *h = (PlatformLog *)hdl;
+	if (!h)
+	{
+		return;
+	}
+
+	h->SendLog(level, needPrintScreen, fileName, fileLine, fmt, vl);
+}
+
+void PlatformLogSendContent(PlatformLogHandle hdl, EPlatformLogLevel level, int needPrintScreen, const char *fileName, int fileLine, const char *content)
+{
+	PlatformLog *h = (PlatformLog *)hdl;
+	if (!h)
+	{
+		return;
+	}
+
+	h->SendLog(level, needPrintScreen, fileName, fileLine, content);
+}
+/*******************************  C API END  *******************************/

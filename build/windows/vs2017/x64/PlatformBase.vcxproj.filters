@@ -25,6 +25,30 @@
     <Filter Include="内部头文件\Log">
       <UniqueIdentifier>{b6745e6a-e438-4d1e-9f37-d998f55d1387}</UniqueIdentifier>
     </Filter>
+    <Filter Include="内部头文件\File">
+      <UniqueIdentifier>{239b93c6-0911-49c1-a4ec-c9b745d71104}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Pcap">
+      <UniqueIdentifier>{588adadb-63e8-497d-bf2f-1edf8d2847bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="内部头文件\Pcap">
+      <UniqueIdentifier>{849c26a8-3d5b-4b35-a7c2-0ebb7126108a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Socket">
+      <UniqueIdentifier>{cf9a9e68-9ffb-42bb-b7b3-60928b7ff1a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Base">
+      <UniqueIdentifier>{17f68516-f427-4d60-99bb-15e65c32dd5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="内部头文件\Base">
+      <UniqueIdentifier>{7d284100-9047-424f-b96f-bbd8d9b0291d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="内部头文件\Socket">
+      <UniqueIdentifier>{32515c89-9647-498f-ae1d-ae77f68e2278}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SyncIo">
+      <UniqueIdentifier>{df7f7627-9bc7-4d2f-a715-fc1b226abcc1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\PlatformFile.h">
@@ -40,18 +64,69 @@
       <Filter>内部头文件\Log</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include_internal\File\IPlatformFile.h">
-      <Filter>内部头文件</Filter>
+      <Filter>内部头文件\File</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\PlatformPcap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\PlatformBaseApi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include_internal\Pcap\IPlatformPcap.h">
+      <Filter>内部头文件\Pcap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\PlatformSocket.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include_internal\Base\IPlatformBaseApi.h">
+      <Filter>内部头文件\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrBase.h">
+      <Filter>内部头文件\Socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrIpv4.h">
+      <Filter>内部头文件\Socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrIpv6.h">
+      <Filter>内部头文件\Socket</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\PlatformSyncIo.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\File\PlatformFile.cpp">
       <Filter>源文件\File</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\Log\IPlatformLogCtx.cpp">
+    <ClCompile Include="..\..\..\..\src\Socket\PlatformSocket.cpp">
+      <Filter>源文件\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\Base\PlatformBaseApi.cpp">
+      <Filter>源文件\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\Log\PlatformLog.cpp">
       <Filter>源文件\Log</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\Log\IPlatformLog.cpp">
+    <ClCompile Include="..\..\..\..\src\Log\PlatformLogCtx.cpp">
       <Filter>源文件\Log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddrBase.cpp">
+      <Filter>源文件\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddrIpv4.cpp">
+      <Filter>源文件\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddrIpv6.cpp">
+      <Filter>源文件\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddr.cpp">
+      <Filter>源文件\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\Pcap\PlatformPcap.cpp">
+      <Filter>源文件\Pcap</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\SyncIo\PlatformSyncIoSelect.cpp">
+      <Filter>源文件\SyncIo</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

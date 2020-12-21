@@ -1,15 +1,8 @@
 ﻿#ifndef PLATFORM_FILE_H_
 #define PLATFORM_FILE_H_
 
-#if defined(WIN32) || defined(_WINDLL)
-#if defined(PLATFORM_BASE_EXPORT)
-#define PLATFORM_BASE_API   __declspec(dllexport)
-#else
-#define PLATFORM_BASE_API   __declspec(dllimport)
-#endif
-#else
-#define PLATFORM_BASE_API
-#endif
+#include <stdint.h>
+#include "PlatformBaseApi.h"
 
 #ifdef __cplusplus
 extern "C"

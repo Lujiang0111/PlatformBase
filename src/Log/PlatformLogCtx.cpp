@@ -22,7 +22,7 @@
 #define C_YELLOW        "\033[0;33m"
 #define C_YELLOW_HL     "\033[1;33m"
 
-IPlatformLogCtx::IPlatformLogCtx(uint64_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
+PlatformLogCtx::PlatformLogCtx(uint64_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
 {
 	_id = id;
 
@@ -66,7 +66,7 @@ IPlatformLogCtx::IPlatformLogCtx(uint64_t id, EPlatformLogLevel level, bool need
 	_next = NULL;
 }
 
-IPlatformLogCtx::~IPlatformLogCtx()
+PlatformLogCtx::~PlatformLogCtx()
 {
 	if (_fileName)
 	{
@@ -81,7 +81,7 @@ IPlatformLogCtx::~IPlatformLogCtx()
 	}
 }
 
-void IPlatformLogCtx::Init()
+void PlatformLogCtx::Init()
 {
 	time_t logTime = std::chrono::system_clock::to_time_t(_time);
 #if defined(WIN32) || defined(_WINDLL)
@@ -91,7 +91,7 @@ void IPlatformLogCtx::Init()
 #endif
 }
 
-void IPlatformLogCtx::PrintScreen() const
+void PlatformLogCtx::PrintScreen() const
 {
 	if (_lostCnt > 0)
 	{
@@ -192,7 +192,7 @@ void IPlatformLogCtx::PrintScreen() const
 #endif
 }
 
-void IPlatformLogCtx::PrintFile(FILE *fp) const
+void PlatformLogCtx::PrintFile(FILE *fp) const
 {
 	if (!fp)
 	{
@@ -242,32 +242,32 @@ void IPlatformLogCtx::PrintFile(FILE *fp) const
 	fflush(fp);
 }
 
-const std::chrono::time_point<std::chrono::system_clock> &IPlatformLogCtx::GetTime() const
+const std::chrono::time_point<std::chrono::system_clock> &PlatformLogCtx::GetTime() const
 {
 	return _time;
 }
 
-const struct tm &IPlatformLogCtx::GetTm() const
+const struct tm &PlatformLogCtx::GetTm() const
 {
 	return _tm;
 }
 
-bool IPlatformLogCtx::NeedPrintScreen() const
+bool PlatformLogCtx::NeedPrintScreen() const
 {
 	return _needPrintScreen;
 }
 
-void IPlatformLogCtx::AddLostCnt()
+void PlatformLogCtx::AddLostCnt()
 {
 	++_lostCnt;
 }
 
-IPlatformLogCtx *IPlatformLogCtx::GetNext()
+PlatformLogCtx *PlatformLogCtx::GetNext()
 {
 	return _next;
 }
 
-void IPlatformLogCtx::SetNext(IPlatformLogCtx *next)
+void PlatformLogCtx::SetNext(PlatformLogCtx *next)
 {
 	_next = next;
 }

@@ -5,18 +5,15 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
+#include "PlatformLog.h"
+#include "Base/IPlatformBaseApi.h"
 #include "Log/IPlatformLogCtx.h"
 
-/*****************************
-PlatformBase库内日志输出调用
-*****************************/
-void PBLogOut(EPlatformLogLevel level, const char *fmt, ...);
-
-class IPlatformLog
+class PlatformLog
 {
 public:
-	IPlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, uint64_t maxLogSize, uint64_t maxQueLen);
-	virtual ~IPlatformLog();
+	PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, uint64_t maxLogSize, uint64_t maxQueLen);
+	virtual ~PlatformLog();
 
 	bool Start();
 	void Stop();
@@ -25,11 +22,11 @@ public:
 	void SendLog(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content);
 
 private:
-	IPlatformLog() = delete;
-	IPlatformLog(const IPlatformLog&) = delete;
-	IPlatformLog& operator=(const IPlatformLog&) = delete;
+	PlatformLog() = delete;
+	PlatformLog(const PlatformLog&) = delete;
+	PlatformLog& operator=(const PlatformLog&) = delete;
 
-	void Update(const IPlatformLogCtx *logCtx);
+	void Update(const PlatformLogCtx *logCtx);
 	void DoClear();
 
 	static void WorkThreadEntry(void *hdl);
@@ -51,9 +48,10 @@ private:
 	int _hoursCnt;
 	FILE *_fp;
 
-	IPlatformLogCtx _logCtxDummy;
-	IPlatformLogCtx *_logCtxTail;
+	PlatformLogCtx _logCtxDummy;
+	PlatformLogCtx *_logCtxTail;
 	int _logCtxCnt;
+
 	std::vector<char> _contentBuf;
 };
 

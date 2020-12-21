@@ -3,13 +3,13 @@
 
 #include <chrono>
 #include <time.h>
-#include "PlatformLog.h"
+#include "Base/IPlatformBaseApi.h"
 
-class IPlatformLogCtx
+class PlatformLogCtx
 {
 public:
-	IPlatformLogCtx(uint64_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content);
-	virtual ~IPlatformLogCtx();
+	PlatformLogCtx(uint64_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content);
+	virtual ~PlatformLogCtx();
 
 	void Init();
 	void PrintScreen() const;
@@ -20,13 +20,13 @@ public:
 	bool NeedPrintScreen() const;
 	void AddLostCnt();
 
-	IPlatformLogCtx *GetNext();
-	void SetNext(IPlatformLogCtx *next);
+	PlatformLogCtx *GetNext();
+	void SetNext(PlatformLogCtx *next);
 
 private:
-	IPlatformLogCtx() = delete;
-	IPlatformLogCtx(const IPlatformLogCtx&) = delete;
-	IPlatformLogCtx& operator=(const IPlatformLogCtx&) = delete;
+	PlatformLogCtx() = delete;
+	PlatformLogCtx(const PlatformLogCtx&) = delete;
+	PlatformLogCtx& operator=(const PlatformLogCtx&) = delete;
 
 private:
 	uint64_t _id;
@@ -41,7 +41,7 @@ private:
 	struct tm _tm;
 
 	// µ¥Á´½á¹¹
-	IPlatformLogCtx *_next;
+	PlatformLogCtx *_next;
 };
 
 #endif // ! I_LOG_CTX_H_

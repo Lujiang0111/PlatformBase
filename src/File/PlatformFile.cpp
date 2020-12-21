@@ -2,6 +2,10 @@
 #include <windows.h>
 #include <direct.h>
 #else
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 #include <string.h>
@@ -14,6 +18,7 @@
 static SPlatformFileInfo *MergeTwoList(SPlatformFileInfo *lhs, SPlatformFileInfo *rhs, EPlatformFileSortMode sortMode);
 /***********************************************************************/
 
+// 归并排序
 static SPlatformFileInfo *SortList(SPlatformFileInfo *head, EPlatformFileSortMode sortMode)
 {
 	if (PF_SORT_MODE_NONE == sortMode)
@@ -35,13 +40,13 @@ static SPlatformFileInfo *SortList(SPlatformFileInfo *head, EPlatformFileSortMod
 		fast = fast->next->next;
 	}
 
-	// 归并排序
 	SPlatformFileInfo *rhs = SortList(slow->next, sortMode);
 	slow->next = NULL;
 	SPlatformFileInfo *lhs = SortList(head, sortMode);
 	return MergeTwoList(lhs, rhs, sortMode);
 }
 
+// 归并排序合并
 static SPlatformFileInfo *MergeTwoList(SPlatformFileInfo *lhs, SPlatformFileInfo *rhs, EPlatformFileSortMode sortMode)
 {
 	SPlatformFileInfo dummy;
@@ -90,9 +95,9 @@ static SPlatformFileInfo *MergeTwoList(SPlatformFileInfo *lhs, SPlatformFileInfo
 	return dummy.next;
 }
 
-static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSortMode sortMode, SPlatformFileInfo *parent, uint64_t totalSize)
-{
 #if defined(WIN32) || defined(_WINDLL)
+static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSortMode sortMode, SPlatformFileInfo *parent, uint64_t &totalSize)
+{
 	std::string sSearchFileName = fileName;
 
 	if (parent)
@@ -131,21 +136,12 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 			if (parent)
 			{
 				node->fullName = new char[strlen(fileName) + 1 + strlen(ffd.cFileName) + 1];
-				sprintf(node->fullName, "%s\\%s", fileName, ffd.cFileName);
+				sprintf(node->fullName, "%s%c%s", fileName, PATH_SPLIT_CHAR, ffd.cFileName);
 			}
 			else
 			{
 				node->fullName = new char[strlen(fileName) + 1];
 				strcpy(node->fullName, fileName);
-			}
-
-			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			{
-				node->mode = PF_MODE_DIRECTORY;
-			}
-			else
-			{
-				node->mode = PF_MODE_NORMAL_FILE;
 			}
 
 			node->size = ffd.nFileSizeHigh;
@@ -156,14 +152,16 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 			node->lastModifyTime = (int64_t)(totalUs / 1000000);
 
 			node->parent = parent;
-			if (PF_MODE_DIRECTORY == node->mode)
+			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
+				node->mode = PF_MODE_DIRECTORY;
 				uint64_t dirSize = 0;
 				node->child = SearchFileInfo(node->fullName, sortMode, node, dirSize);
 				node->size += dirSize;
 			}
 			else
 			{
+				node->mode = PF_MODE_NORMAL_FILE;
 				node->child = NULL;
 			}
 			node->next = NULL;
@@ -175,12 +173,118 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 	} while (FindNextFile(hFind, &ffd)); //Find the next file.
 
 	FindClose(hFind);
-#else
-#endif
 
 	// 对链表进行排序
 	return SortList(dummy.next, sortMode);
 }
+#else
+static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSortMode sortMode, SPlatformFileInfo *parent, uint64_t &totalSize)
+{
+	struct stat fileStat;
+	if (0 != lstat(fileName, &fileStat))
+	{
+		PBLogOut(PL_LEVEL_ERROR, "stat file [%s] fail!, errno=%d", fileName, errno);
+		return NULL;
+	}
+
+	SPlatformFileInfo dummy = { 0 };
+	SPlatformFileInfo *tail = &dummy;
+	if (!parent)
+	{
+		SPlatformFileInfo *node = new SPlatformFileInfo;
+		const char *pSplit = strrchr(fileName, PATH_SPLIT_CHAR);
+
+		node->name = new char[strlen(pSplit + 1) + 1];
+		strcpy(node->name, pSplit + 1);
+
+		node->fullName = new char[strlen(fileName) + 1];
+		strcpy(node->fullName, fileName);
+
+		node->mode = PF_MODE_NORMAL_FILE;
+		node->size = fileStat.st_size;
+		node->lastModifyTime = fileStat.st_ctime;
+
+		node->parent = parent;
+		if (S_ISDIR(fileStat.st_mode))
+		{
+			node->mode = PF_MODE_DIRECTORY;
+			uint64_t dirSize = 0;
+			node->child = SearchFileInfo(node->fullName, sortMode, node, dirSize);
+			node->size += dirSize;
+		}
+		else
+		{
+			node->mode = PF_MODE_NORMAL_FILE;
+			node->child = NULL;
+		}
+		node->next = NULL;
+
+		totalSize += node->size;
+		tail->next = node;
+		tail = tail->next;
+	}
+	else
+	{
+		DIR *dir = opendir(fileName);
+		if (!dir)
+		{
+			PBLogOut(PL_LEVEL_ERROR, "open dir [%s] fail!, errno=%d", fileName, errno);
+			return NULL;
+		}
+
+		struct dirent* pDirent = NULL;
+		while (NULL != (pDirent = readdir(dir)))
+		{
+			if ((0 == strcmp(pDirent->d_name, ".")) || (0 == strcmp(pDirent->d_name, "..")))
+			{
+				continue;
+			}
+
+			char *fullName = new char[strlen(fileName) + 1 + strlen(pDirent->d_name) + 1];
+			sprintf(fullName, "%s%c%s", fileName, PATH_SPLIT_CHAR, pDirent->d_name);
+
+			if (0 != lstat(fullName, &fileStat))
+			{
+				PBLogOut(PL_LEVEL_ERROR, "stat file [%s] fail!, errno=%d", fullName, errno);
+				delete[]fullName;
+				continue;
+			}
+
+			SPlatformFileInfo *node = new SPlatformFileInfo;
+			node->name = new char[strlen(pDirent->d_name) + 1];
+			strcpy(node->name, pDirent->d_name);
+			node->fullName = fullName;
+
+			node->size = fileStat.st_size;
+			node->lastModifyTime = fileStat.st_ctime;
+
+			node->parent = parent;
+			if (S_ISDIR(fileStat.st_mode))
+			{
+				node->mode = PF_MODE_DIRECTORY;
+				uint64_t dirSize = 0;
+				node->child = SearchFileInfo(node->fullName, sortMode, node, dirSize);
+				node->size += dirSize;
+			}
+			else
+			{
+				node->mode = PF_MODE_NORMAL_FILE;
+				node->child = NULL;
+			}
+			node->next = NULL;
+
+			totalSize += node->size;
+			tail->next = node;
+			tail = tail->next;
+		}
+
+		closedir(dir);
+	}
+
+	// 对链表进行排序
+	return SortList(dummy.next, sortMode);
+}
+#endif
 
 SPlatformFileInfo *GetFileInfo(const char* fileName, EPlatformFileSortMode sortMode)
 {
@@ -193,13 +297,10 @@ SPlatformFileInfo *GetFileInfo(const char* fileName, EPlatformFileSortMode sortM
 	std::string sRootFileName = fileName;
 	std::replace(sRootFileName.begin(), sRootFileName.end(), PATH_SPLIT_CHAR_OTHER, PATH_SPLIT_CHAR);
 
-#if defined(WIN32) || defined(_WINDLL)
 	while (PATH_SPLIT_CHAR == sRootFileName.back())
 	{
 		sRootFileName.pop_back();
 	}
-#else
-#endif
 
 	uint64_t totalSize = 0;
 	return SearchFileInfo(sRootFileName.c_str(), sortMode, NULL, totalSize);
@@ -290,9 +391,9 @@ int PFMakeDirectory(const char *pathName)
 	return 0;
 }
 
-static bool RemoveFileR(const char *fileName, bool isRoot)
-{
 #if defined(WIN32) || defined(_WINDLL)
+static bool RemoveFileRecursive(const char *fileName, bool isRoot)
+{
 	bool ret = true;
 	std::string sSearchFileName = fileName;
 
@@ -337,7 +438,7 @@ static bool RemoveFileR(const char *fileName, bool isRoot)
 
 			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
-				if (!RemoveFileR(fullName, false))
+				if (!RemoveFileRecursive(fullName, false))
 				{
 					ret = false;
 				}
@@ -363,9 +464,102 @@ static bool RemoveFileR(const char *fileName, bool isRoot)
 
 	FindClose(hFind);
 	return ret;
-#else
-#endif
 }
+#else
+static bool RemoveFileRecursive(const char *fileName, bool isRoot)
+{
+	bool ret = true;
+
+	struct stat fileStat;
+	if (0 != lstat(fileName, &fileStat))
+	{
+		PBLogOut(PL_LEVEL_ERROR, "stat file [%s] fail!, errno=%d", fileName, errno);
+		return false;
+	}
+
+	if (isRoot)
+	{
+		if (S_ISDIR(fileStat.st_mode))
+		{
+			if (!RemoveFileRecursive(fileName, false))
+			{
+				ret = false;
+			}
+
+			if (0 != rmdir(fileName))
+			{
+				PBLogOut(PL_LEVEL_ERROR, "remove directory [%s] fail!, errno=%d", fileName, errno);
+				ret = false;
+			}
+		}
+		else
+		{
+			if (0 != remove(fileName))
+			{
+				PBLogOut(PL_LEVEL_ERROR, "remove file [%s] fail!, errno=%d", fileName, errno);
+				ret = false;
+			}
+		}
+	}
+	else
+	{
+		DIR *dir = opendir(fileName);
+		if (!dir)
+		{
+			PBLogOut(PL_LEVEL_ERROR, "open dir [%s] fail!, errno=%d", fileName, errno);
+			return false;
+		}
+
+		struct dirent* pDirent = NULL;
+		while (NULL != (pDirent = readdir(dir)))
+		{
+			if ((0 == strcmp(pDirent->d_name, ".")) || (0 == strcmp(pDirent->d_name, "..")))
+			{
+				continue;
+			}
+
+			char *fullName = new char[strlen(fileName) + 1 + strlen(pDirent->d_name) + 1];
+			sprintf(fullName, "%s%c%s", fileName, PATH_SPLIT_CHAR, pDirent->d_name);
+
+			if (0 != lstat(fullName, &fileStat))
+			{
+				PBLogOut(PL_LEVEL_ERROR, "stat file [%s] fail!, errno=%d", fullName, errno);
+				ret = false;
+				delete[]fullName;
+				continue;
+			}
+
+			if (S_ISDIR(fileStat.st_mode))
+			{
+				if (!RemoveFileRecursive(fullName, false))
+				{
+					ret = false;
+				}
+
+				if (0 != rmdir(fullName))
+				{
+					PBLogOut(PL_LEVEL_ERROR, "remove directory [%s] fail!, errno=%d", fullName, errno);
+					ret = false;
+				}
+			}
+			else
+			{
+				if (0 != remove(fullName))
+				{
+					PBLogOut(PL_LEVEL_ERROR, "remove file [%s] fail!, errno=%d", fullName, errno);
+					ret = false;
+				}
+			}
+
+			delete[]fullName;
+		}
+
+		closedir(dir);
+	}
+
+	return ret;
+}
+#endif
 
 int PFRemoveFile(const char *fileName)
 {
@@ -376,8 +570,13 @@ int PFRemoveFile(const char *fileName)
 
 	std::string sRootFileName = fileName;
 	std::replace(sRootFileName.begin(), sRootFileName.end(), PATH_SPLIT_CHAR_OTHER, PATH_SPLIT_CHAR);
+
+	while (PATH_SPLIT_CHAR == sRootFileName.back())
+	{
+		sRootFileName.pop_back();
+	}
 	
-	if (!RemoveFileR(fileName, true))
+	if (!RemoveFileRecursive(fileName, true))
 	{
 		return -1;
 	}

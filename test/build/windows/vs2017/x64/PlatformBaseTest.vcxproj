@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{BA5E7D98-FF8E-4875-872C-1865D3DD5873}</ProjectGuid>
-    <RootNamespace>PlatformBase</RootNamespace>
+    <ProjectGuid>{5B38B594-F615-42C9-B9DF-31CB2F771308}</ProjectGuid>
+    <RootNamespace>PlatformBaseTest</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -39,7 +39,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -70,8 +70,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\..\..\include;..\..\..\..\include_internal;..\..\..\..\deps\include;..\..\..\..\deps\include\npcap;$(IncludePath)</IncludePath>
     <OutDir>..\..\..\..\bin\</OutDir>
+    <IncludePath>..\..\..\..\include;..\..\..\..\deps\include;..\..\..\..\deps\include\PlatformBase;$(IncludePath)</IncludePath>
     <LibraryPath>..\..\..\..\deps\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -91,20 +91,19 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>PLATFORM_BASE_EXPORT;PLATFORM_SYNC_IO_SELECT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>ws2_32.lib;Packet.lib;wpcap.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>wpcap.dll</DelayLoadDLLs>
+      <AdditionalDependencies>ws2_32.lib;PlatformBase.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>.\postbuild.bat</Command>
-    </PostBuildEvent>
     <PreBuildEvent>
       <Command>.\prebuild.bat</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>.\postbuild.bat</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -137,33 +136,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\include\PlatformBaseApi.h" />
-    <ClInclude Include="..\..\..\..\include\PlatformFile.h" />
-    <ClInclude Include="..\..\..\..\include\PlatformLog.h" />
-    <ClInclude Include="..\..\..\..\include\PlatformPcap.h" />
-    <ClInclude Include="..\..\..\..\include\PlatformSocket.h" />
-    <ClInclude Include="..\..\..\..\include\PlatformSyncIo.h" />
-    <ClInclude Include="..\..\..\..\include_internal\Base\IPlatformBaseApi.h" />
-    <ClInclude Include="..\..\..\..\include_internal\File\IPlatformFile.h" />
-    <ClInclude Include="..\..\..\..\include_internal\Log\IPlatformLog.h" />
-    <ClInclude Include="..\..\..\..\include_internal\Log\IPlatformLogCtx.h" />
-    <ClInclude Include="..\..\..\..\include_internal\Pcap\IPlatformPcap.h" />
-    <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrBase.h" />
-    <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrIpv4.h" />
-    <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrIpv6.h" />
+    <ClCompile Include="..\..\..\..\src\main.cpp" />
+    <ClCompile Include="..\..\..\..\src\TestFile.cpp" />
+    <ClCompile Include="..\..\..\..\src\TestLog.cpp" />
+    <ClCompile Include="..\..\..\..\src\TestPcap.cpp" />
+    <ClCompile Include="..\..\..\..\src\TestSocket.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\Base\PlatformBaseApi.cpp" />
-    <ClCompile Include="..\..\..\..\src\File\PlatformFile.cpp" />
-    <ClCompile Include="..\..\..\..\src\Log\PlatformLog.cpp" />
-    <ClCompile Include="..\..\..\..\src\Log\PlatformLogCtx.cpp" />
-    <ClCompile Include="..\..\..\..\src\Pcap\PlatformPcap.cpp" />
-    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddr.cpp" />
-    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddrBase.cpp" />
-    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddrIpv4.cpp" />
-    <ClCompile Include="..\..\..\..\src\Socket\PlatformSockAddrIpv6.cpp" />
-    <ClCompile Include="..\..\..\..\src\Socket\PlatformSocket.cpp" />
-    <ClCompile Include="..\..\..\..\src\SyncIo\PlatformSyncIoSelect.cpp" />
+    <ClInclude Include="..\..\..\..\include\TestFile.h" />
+    <ClInclude Include="..\..\..\..\include\TestLog.h" />
+    <ClInclude Include="..\..\..\..\include\TestPcap.h" />
+    <ClInclude Include="..\..\..\..\include\TestSocket.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

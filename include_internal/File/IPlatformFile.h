@@ -2,6 +2,7 @@
 #define I_PLATFORM_FILE_H_
 
 #include "PlatformFile.h"
+#include "Base/IPlatformBaseApi.h"
 
 #if defined(WIN32) || defined(_WINDLL)
 constexpr auto PATH_SPLIT_CHAR = '\\';
