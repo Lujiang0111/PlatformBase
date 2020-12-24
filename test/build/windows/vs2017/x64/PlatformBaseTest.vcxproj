@@ -141,12 +141,14 @@
     <ClCompile Include="..\..\..\..\src\TestLog.cpp" />
     <ClCompile Include="..\..\..\..\src\TestPcap.cpp" />
     <ClCompile Include="..\..\..\..\src\TestSocket.cpp" />
+    <ClCompile Include="..\..\..\..\src\TestSyncIo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\TestFile.h" />
     <ClInclude Include="..\..\..\..\include\TestLog.h" />
     <ClInclude Include="..\..\..\..\include\TestPcap.h" />
     <ClInclude Include="..\..\..\..\include\TestSocket.h" />
+    <ClInclude Include="..\..\..\..\include\TestSyncIo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

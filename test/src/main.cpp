@@ -5,6 +5,7 @@
 #include "TestLog.h"
 #include "TestSocket.h"
 #include "TestPcap.h"
+#include "TestSyncIo.h"
 
 bool bAppStart = true;
 

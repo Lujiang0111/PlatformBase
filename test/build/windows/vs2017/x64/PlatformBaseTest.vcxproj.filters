@@ -30,6 +30,9 @@
     <ClCompile Include="..\..\..\..\src\TestPcap.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\TestSyncIo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\TestFile.h">
@@ -42,6 +45,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\TestPcap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\TestSyncIo.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
