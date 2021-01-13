@@ -106,7 +106,7 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 		// string to a buffer, then append '\*' to the directory name.
 		sSearchFileName += "\\*";
 	}
-	
+
 	if (sSearchFileName.length() > MAX_PATH)
 	{
 		PBLogOut(PL_LEVEL_ERROR, "filename too long! filename=%s", fileName);
@@ -575,7 +575,7 @@ int PFRemoveFile(const char *fileName)
 	{
 		sRootFileName.pop_back();
 	}
-	
+
 	if (!RemoveFileRecursive(fileName, true))
 	{
 		return -1;

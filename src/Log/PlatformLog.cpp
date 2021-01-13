@@ -62,7 +62,7 @@ PlatformLog::PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, u
 		// 默认日志队列最大长度为10000
 		_maxQueLen = 10000;
 	}
-	
+
 	_isRunning = false;
 	_workThread = NULL;
 	_hoursCnt = 0;
