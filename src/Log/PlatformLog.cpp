@@ -146,8 +146,8 @@ void PlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const c
 		}
 	}
 
-	++_id;
-	PlatformLogCtx *logCtx = new PlatformLogCtx(_id, level, needPrintScreen, fileName, fileLine, &_contentBuf[0]);
+	uint64_t id = IncreaseId();
+	PlatformLogCtx *logCtx = new PlatformLogCtx(id, level, needPrintScreen, fileName, fileLine, &_contentBuf[0]);
 	_logCtxTail->SetNext(logCtx);
 	_logCtxTail = logCtx;
 	++_logCtxCnt;
@@ -163,11 +163,16 @@ void PlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const c
 		return;
 	}
 
-	++_id;
-	PlatformLogCtx *logCtx = new PlatformLogCtx(_id, level, needPrintScreen, fileName, fileLine, content);
+	uint64_t id = IncreaseId();
+	PlatformLogCtx *logCtx = new PlatformLogCtx(id, level, needPrintScreen, fileName, fileLine, content);
 	_logCtxTail->SetNext(logCtx);
 	_logCtxTail = logCtx;
 	++_logCtxCnt;
+}
+
+uint64_t PlatformLog::IncreaseId()
+{
+	return ++_id;
 }
 
 void PlatformLog::Update(const PlatformLogCtx *logCtx)

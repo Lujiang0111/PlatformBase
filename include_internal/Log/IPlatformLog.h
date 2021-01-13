@@ -26,6 +26,8 @@ private:
 	PlatformLog(const PlatformLog&) = delete;
 	PlatformLog& operator=(const PlatformLog&) = delete;
 
+	static uint64_t IncreaseId();
+
 	void Update(const PlatformLogCtx *logCtx);
 	void DoClear();
 
