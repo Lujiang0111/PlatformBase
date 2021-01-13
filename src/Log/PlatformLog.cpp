@@ -95,6 +95,7 @@ bool PlatformLog::Start()
 	}
 
 	_isRunning = true;
+	PFMakeDirectory(_logPath.c_str());
 	_workThread = new std::thread(WorkThreadEntry, this);
 
 	return true;
@@ -302,6 +303,12 @@ void PlatformLog::WorkThread()
 		}
 
 		nextSpanTime += std::chrono::milliseconds(_spanMs);
+	}
+
+	if (_fp)
+	{
+		fclose(_fp);
+		_fp = NULL;
 	}
 }
 

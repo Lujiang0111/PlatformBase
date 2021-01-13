@@ -194,8 +194,16 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 		SPlatformFileInfo *node = new SPlatformFileInfo;
 		const char *pSplit = strrchr(fileName, PATH_SPLIT_CHAR);
 
-		node->name = new char[strlen(pSplit + 1) + 1];
-		strcpy(node->name, pSplit + 1);
+		if (pSplit)
+		{
+			node->name = new char[strlen(pSplit + 1) + 1];
+			strcpy(node->name, pSplit + 1);
+		}
+		else
+		{
+			node->name = new char[strlen(fileName) + 1];
+			strcpy(node->name, fileName);
+		}
 
 		node->fullName = new char[strlen(fileName) + 1];
 		strcpy(node->fullName, fileName);
@@ -343,6 +351,7 @@ void FreeFileInfo(SPlatformFileInfo **hdl)
 		h->next = NULL;
 	}
 
+	delete h;
 	*hdl = NULL;
 }
 
