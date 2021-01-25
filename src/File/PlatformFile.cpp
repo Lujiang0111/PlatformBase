@@ -492,8 +492,7 @@ static bool RemoveFileRecursive(const char *fileName, bool isRoot)
 	struct stat fileStat;
 	if (0 != lstat(fileName, &fileStat))
 	{
-		PBLogOut(PL_LEVEL_ERROR, "stat file [%s] fail!, errno=%d", fileName, errno);
-		return false;
+		return true;
 	}
 
 	if (isRoot)
