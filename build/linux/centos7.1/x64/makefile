@@ -9,17 +9,28 @@ PROJECT=PlatformBase
 #index 2 is copy include flag
 #index 3 is copy lib flag
 PREBUILD_LIB_PATH=../../../../../../../../Versions/Baselib
-PREBUILD_LIBS="libpcap 1.9.1 true true"
+PREBUILD_LIBS_BASE=""
 POSTBUILD_PATH=../../../../../../../../Versions/Baselib
+
+ifdef ENABLE_PCAP
+PREBUILD_LIBS_PCAP="libpcap 1.9.1 true true "
+endif
+PREBUILD_LIBS=$(PREBUILD_LIBS_BASE)$(PREBUILD_LIBS_PCAP)
 
 #manually specify
 INCLUDE=-I../../../../include \
 -I../../../../include_internal \
 -I../../../../deps/include \
 -I../../../../deps/include/libpcap
-LIBS=-L../../../../deps/lib -Wl,-rpath-link=../../../../deps/lib -lpcap
+
 WARNING_SWITCH=-Wall -Wno-unused-function
+LIBS=-L../../../../deps/lib -Wl,-rpath-link=../../../../deps/lib
 DEFINES=
+
+ifdef ENABLE_PCAP
+DEFINES+=-DENABLE_PCAP=1
+LIBS+=-lpcap
+endif
 
 VERSION=$(VERSION_X).$(VERSION_Y).$(VERSION_Z)
 REAL_NAME=lib$(PROJECT).so.$(VERSION)

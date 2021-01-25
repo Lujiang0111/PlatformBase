@@ -61,12 +61,14 @@ int main(int argc, char *argv[])
 	case 6:
 		TestUdpClient(argc, argv);
 		break;
+#if ENABLE_PCAP
 	case 7:
 		TestPcapIpPort(argc, argv);
 		break;
 	case 8:
 		TestPcapFilter(argc, argv);
 		break;
+#endif
 	default:
 		std::cout << "out of range, byebye!\n";
 		break;

@@ -1,3 +1,5 @@
+#if ENABLE_PCAP
+
 #if defined (WIN32) || defined (_WINDLL)
 #else
 #include <unistd.h>
@@ -481,3 +483,5 @@ void PlatformPcapStop(PlatformPcapHandle hdl)
 	h->Stop();
 }
 /*******************************  C API END  *******************************/
+
+#endif

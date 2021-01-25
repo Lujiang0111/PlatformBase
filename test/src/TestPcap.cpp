@@ -1,3 +1,5 @@
+#if ENABLE_PCAP
+
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -179,3 +181,5 @@ void TestPcapFilter(int argc, char *argv[])
 	PlatformPcapDestroy(&pcapHdl);
 	delete h;
 }
+
+#endif
