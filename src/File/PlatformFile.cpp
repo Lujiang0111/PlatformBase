@@ -372,6 +372,16 @@ int PFMakeDirectory(const char *pathName)
 	char sTmp[PATH_MAX_LEN + 2];
 	strcpy(sTmp, pathName);
 	size_t len = strlen(sTmp);
+
+	// 不同平台路径转换
+	for (size_t i = 0; i < len; ++i)
+	{
+		if (PATH_SPLIT_CHAR_OTHER == sTmp[i])
+		{
+			sTmp[i] = PATH_SPLIT_CHAR;
+		}
+	}
+
 	if (PATH_SPLIT_CHAR != sTmp[len - 1])
 	{
 		sTmp[len] = PATH_SPLIT_CHAR;
