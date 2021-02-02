@@ -6,7 +6,8 @@ PROJECT=PlatformBaseTest
 #index 2 is copy include flag
 #index 3 is copy lib flag
 PREBUILD_LIB_PATH=../../../../../../../../../Versions/Baselib
-PREBUILD_LIBS="PlatformBase 1.0.0 true true"
+PREBUILD_LIBS="PlatformBase 1.0.0 true true \
+libpcap 1.9.1 false true"
 
 POSTBUILD_LIB_PATH=../../../../../../../../../Versions/Baselib
 POSTBUILD_LIBS="PlatformBase 1.0.0 \
@@ -19,7 +20,7 @@ INCLUDE=-I../../../../include \
 -I../../../../deps/include/PlatformBase
 LIBS=-Wl,-rpath-link=../../../../deps/lib -L../../../../deps/lib -lPlatformBase -lpthread
 WARNING_SWITCH=-Wall -Wno-unused-function
-DEFINES=
+DEFINES=-ENABLE_PCAP=0
 
 TARGET=../../../../bin/$(PROJECT)
 CC:=gcc
