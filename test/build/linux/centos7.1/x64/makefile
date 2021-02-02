@@ -20,7 +20,7 @@ INCLUDE=-I../../../../include \
 -I../../../../deps/include/PlatformBase
 LIBS=-Wl,-rpath-link=../../../../deps/lib -L../../../../deps/lib -lPlatformBase -lpthread
 WARNING_SWITCH=-Wall -Wno-unused-function
-DEFINES=-ENABLE_PCAP=0
+DEFINES=-DENABLE_PCAP=0
 
 TARGET=../../../../bin/$(PROJECT)
 CC:=gcc
