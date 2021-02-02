@@ -84,6 +84,8 @@ static bool PcapInitEnv()
 
 IPlatformPcap::IPlatformPcap(const char *ip, uint16_t port, const char *ifIp, bool openPromisc)
 {
+	Init();
+
 	_type = PP_TYPE_UDP;
 
 	if (ip)
@@ -98,19 +100,12 @@ IPlatformPcap::IPlatformPcap(const char *ip, uint16_t port, const char *ifIp, bo
 
 	_port = port;
 	_openPromisc = openPromisc;
-
-	_pPcapCb = NULL;
-	_pPcapCbPrivData = NULL;
-
-	_fd = -1;
-	_pcapHdl = NULL;
-	_pcapType = 0;
-	_capThread = NULL;
-	_isRunning = false;
 }
 
 IPlatformPcap::IPlatformPcap(const char *sFilter, const char *ifIp, bool openPromisc)
 {
+	Init();
+
 	_type = PP_TYPE_FILTER;
 
 	if (sFilter)
@@ -124,15 +119,30 @@ IPlatformPcap::IPlatformPcap(const char *sFilter, const char *ifIp, bool openPro
 	}
 
 	_openPromisc = openPromisc;
+}
 
-	_pPcapCb = NULL;
-	_pPcapCbPrivData = NULL;
+IPlatformPcap::IPlatformPcap(const char *sFilter, const char *ifIp, bool openPromisc, const char *dumpFileName)
+{
+	Init();
 
-	_fd = -1;
-	_pcapHdl = NULL;
-	_pcapType = 0;
-	_capThread = NULL;
-	_isRunning = false;
+	_type = PP_TYPE_DUMP;
+
+	if (sFilter)
+	{
+		_sFilter = sFilter;
+	}
+
+	if (ifIp)
+	{
+		_ifIp = ifIp;
+	}
+
+	_openPromisc = openPromisc;
+
+	if (dumpFileName)
+	{
+		_dumpFileName = dumpFileName;
+	}
 }
 
 IPlatformPcap::~IPlatformPcap()
@@ -140,10 +150,22 @@ IPlatformPcap::~IPlatformPcap()
 	Stop();
 }
 
-void IPlatformPcap::SetCallback(PPcapCallback cb, void *privData)
+void IPlatformPcap::UpdateCallback(PPcapCallback cb, void *privData)
 {
-	_pPcapCb = cb;
-	_pPcapCbPrivData = privData;
+	std::lock_guard<std::mutex> lock(_capThreadMutex);
+	_newPPcapCb = cb;
+	_newPPcapCbPrivData = privData;
+	_isDumpFileNameUpdate = true;
+}
+
+void IPlatformPcap::UpdateDumpFileName(const char *dumpFileName)
+{
+	std::lock_guard<std::mutex> lock(_capThreadMutex);
+	if (dumpFileName)
+	{
+		_dumpFileName = dumpFileName;
+		_isDumpFileNameUpdate = true;
+	}
 }
 
 bool IPlatformPcap::Start()
@@ -259,6 +281,29 @@ void IPlatformPcap::Stop()
 	PSocketCleanEnv();
 }
 
+void IPlatformPcap::Init()
+{
+	_type = PP_TYPE_UDP;
+	_port = 0;
+	_openPromisc = false;
+
+	_pPcapCb = NULL;
+	_pPcapCbPrivData = NULL;
+	_newPPcapCb = NULL;
+	_newPPcapCbPrivData = NULL;
+	_isCallbackUpdate = false;
+
+	_fd = -1;
+	_pcapHdl = NULL;
+	_pcapType = 0;
+
+	_capThread = NULL;
+	_isRunning = false;
+
+	_pcapDumpHdl = NULL;
+	_isDumpFileNameUpdate = false;
+}
+
 void IPlatformPcap::CapThreadEntry(void *privData)
 {
 	IPlatformPcap *h = reinterpret_cast<IPlatformPcap *>(privData);
@@ -290,6 +335,7 @@ void IPlatformPcap::CapThread()
 			status = PP_STATUS_ERROR;
 			break;
 		}
+		UpdateCap();
 	}
 	CloseCap();
 }
@@ -326,6 +372,11 @@ EPPcapStatus IPlatformPcap::OpenCap()
 	{
 		PBLogOut(PL_LEVEL_ERROR, "Couldn't install filter %s: %s", _sFilter.c_str(), pcap_geterr(_pcapHdl));
 		return PP_STATUS_ERROR;
+	}
+
+	if (_dumpFileName.length() > 0)
+	{
+		_pcapDumpHdl = pcap_dump_open(_pcapHdl, _dumpFileName.c_str());
 	}
 
 	return PP_STATUS_WORK;
@@ -410,11 +461,18 @@ EPPcapStatus IPlatformPcap::DoCap()
 
 			}
 		}
-		else
+		else if (PP_TYPE_FILTER == _type)
 		{
 			if (_pPcapCb)
 			{
 				_pPcapCb(_pPcapCbPrivData, packet, header->len);
+			}
+		}
+		else if (PP_TYPE_DUMP == _type)
+		{
+			if (_pcapDumpHdl)
+			{
+				pcap_dump(reinterpret_cast<u_char *>(_pcapDumpHdl), header, packet);
 			}
 		}
 	} while (0);
@@ -424,6 +482,11 @@ EPPcapStatus IPlatformPcap::DoCap()
 
 EPPcapStatus IPlatformPcap::CloseCap()
 {
+	if (_pcapDumpHdl)
+	{
+		pcap_dump_close(_pcapDumpHdl);
+	}
+
 	if (_pcapHdl)
 	{
 		pcap_close(_pcapHdl);
@@ -433,18 +496,44 @@ EPPcapStatus IPlatformPcap::CloseCap()
 	return PP_STATUS_INIT;
 }
 
+void IPlatformPcap::UpdateCap()
+{
+	if (_isCallbackUpdate)
+	{
+		std::lock_guard<std::mutex> lock(_capThreadMutex);
+		_pPcapCb = _newPPcapCb;
+		_pPcapCbPrivData = _newPPcapCbPrivData;
+		_isCallbackUpdate = false;
+	}
+
+	if (_isDumpFileNameUpdate)
+	{
+		std::lock_guard<std::mutex> lock(_capThreadMutex);
+		if (_pcapDumpHdl)
+		{
+			pcap_dump_close(_pcapDumpHdl);
+		}
+		_pcapDumpHdl = pcap_dump_open(_pcapHdl, _dumpFileName.c_str());
+		_isDumpFileNameUpdate = false;
+	}
+}
+
 /******************************  C API START  ******************************/
 PlatformPcapHandle PlatformPcapUdpCreate(const char *ip, uint16_t port, const char *ifIp, int openPromisc)
 {
-	IPlatformPcap *h = NULL;
-	h = new IPlatformPcap(ip, port, ifIp, (openPromisc != 0));
+	IPlatformPcap *h = new IPlatformPcap(ip, port, ifIp, (openPromisc != 0));
 	return h;
 }
 
 PlatformPcapHandle PlatformPcapFilterCreate(const char *sFilter, const char *ifIp, int openPromisc)
 {
-	IPlatformPcap *h = NULL;
-	h = new IPlatformPcap(sFilter, ifIp, (openPromisc != 0));
+	IPlatformPcap *h = new IPlatformPcap(sFilter, ifIp, (openPromisc != 0));
+	return h;
+}
+
+PlatformPcapHandle PlatformPcapDumpCreate(const char *sFilter, const char *ifIp, int openPromisc, const char *dumpFileName)
+{
+	IPlatformPcap *h = new IPlatformPcap(sFilter, ifIp, (openPromisc != 0), dumpFileName);
 	return h;
 }
 
@@ -460,10 +549,16 @@ void PlatformPcapDestroy(PlatformPcapHandle *pHdl)
 	*pHdl = NULL;
 }
 
-void PlatformPcapSetCallback(PlatformPcapHandle hdl, PPcapCallback cb, void *privData)
+void PlatformPcapUpdateCallback(PlatformPcapHandle hdl, PPcapCallback cb, void *privData)
 {
 	IPlatformPcap *h = reinterpret_cast<IPlatformPcap *>(hdl);
-	return h->SetCallback(cb, privData);
+	return h->UpdateCallback(cb, privData);
+}
+
+void PlatformPcapUpdateDumpFileName(PlatformPcapHandle hdl, const char *dumpFileName)
+{
+	IPlatformPcap *h = static_cast<IPlatformPcap *>(hdl);
+	return h->UpdateDumpFileName(dumpFileName);
 }
 
 int PlatformPcapStart(PlatformPcapHandle hdl)

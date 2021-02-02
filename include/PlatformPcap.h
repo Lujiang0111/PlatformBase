@@ -17,9 +17,13 @@ extern "C"
 
 	PLATFORM_BASE_API PlatformPcapHandle PlatformPcapFilterCreate(const char *sFilter, const char *ifIp, int openPromisc);
 
+	PLATFORM_BASE_API PlatformPcapHandle PlatformPcapDumpCreate(const char *sFilter, const char *ifIp, int openPromisc, const char *dumpFileName);
+
 	PLATFORM_BASE_API void PlatformPcapDestroy(PlatformPcapHandle *pHdl);
 
-	PLATFORM_BASE_API void PlatformPcapSetCallback(PlatformPcapHandle hdl, PPcapCallback cb, void *privData);
+	PLATFORM_BASE_API void PlatformPcapUpdateCallback(PlatformPcapHandle hdl, PPcapCallback cb, void *privData);
+
+	PLATFORM_BASE_API void PlatformPcapUpdateDumpFileName(PlatformPcapHandle hdl, const char *dumpFileName);
 
 	PLATFORM_BASE_API int PlatformPcapStart(PlatformPcapHandle hdl);
 
