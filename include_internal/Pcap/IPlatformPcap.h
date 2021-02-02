@@ -66,6 +66,7 @@ private:
 
 	int _fd;
 	pcap_t *_pcapHdl;
+	struct bpf_program _bfp;
 	int _pcapType;
 
 	std::thread *_capThread;

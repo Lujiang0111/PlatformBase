@@ -6,6 +6,7 @@
 #define closesocket close
 #endif
 
+#include <string.h>
 #include "Socket/IPlatformSockAddrBase.h"
 #include "Pcap/IPlatformPcap.h"
 
@@ -256,6 +257,8 @@ bool IPlatformPcap::Start()
 			}
 		}
 	}
+	pcap_freealldevs(alldevs);
+	alldevs = NULL;
 
 	_isRunning = true;
 	_capThread = new std::thread(CapThreadEntry, this);
@@ -269,6 +272,7 @@ void IPlatformPcap::Stop()
 	if (_capThread)
 	{
 		_capThread->join();
+		delete _capThread;
 		_capThread = NULL;
 	}
 
@@ -295,6 +299,7 @@ void IPlatformPcap::Init()
 
 	_fd = -1;
 	_pcapHdl = NULL;
+	memset(&_bfp, 0, sizeof(_bfp));
 	_pcapType = 0;
 
 	_capThread = NULL;
@@ -357,18 +362,16 @@ EPPcapStatus IPlatformPcap::OpenCap()
 		PBLogOut(PL_LEVEL_ERROR, "Device doesn't provide Ethernet headers - link type was %d\n", _pcapType);
 	}
 
-	struct bpf_program bfp = { 0 };
-	u_int netmask = 0;
-
 	/* Compile the filter */
-	if (-1 == pcap_compile(_pcapHdl, &bfp, _sFilter.c_str(), 0, netmask))
+	u_int netmask = 0;
+	if (-1 == pcap_compile(_pcapHdl, &_bfp, _sFilter.c_str(), 0, netmask))
 	{
 		PBLogOut(PL_LEVEL_ERROR, "Couldn't parse filter %s: %s", _sFilter.c_str(), pcap_geterr(_pcapHdl));
 		return PP_STATUS_ERROR;
 	}
 
 	/* set the filter */
-	if (-1 == pcap_setfilter(_pcapHdl, &bfp))
+	if (-1 == pcap_setfilter(_pcapHdl, &_bfp))
 	{
 		PBLogOut(PL_LEVEL_ERROR, "Couldn't install filter %s: %s", _sFilter.c_str(), pcap_geterr(_pcapHdl));
 		return PP_STATUS_ERROR;
@@ -486,6 +489,9 @@ EPPcapStatus IPlatformPcap::CloseCap()
 	{
 		pcap_dump_close(_pcapDumpHdl);
 	}
+
+	pcap_freecode(&_bfp);
+	memset(&_bfp, 0, sizeof(_bfp));
 
 	if (_pcapHdl)
 	{
