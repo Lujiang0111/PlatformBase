@@ -1,4 +1,4 @@
-#if defined(WIN32) || defined(_WINDLL)
+ï»¿#if defined(WIN32) || defined(_WINDLL)
 #include <windows.h>
 #include <direct.h>
 #else
@@ -14,11 +14,11 @@
 #include "Log/IPlatformLog.h"
 #include "File/IPlatformFile.h"
 
-/******************************	º¯ÊıÉùÃ÷	********************************/
+/******************************	å‡½æ•°å£°æ˜	********************************/
 static SPlatformFileInfo *MergeTwoList(SPlatformFileInfo *lhs, SPlatformFileInfo *rhs, EPlatformFileSortMode sortMode);
 /***********************************************************************/
 
-// ¹é²¢ÅÅĞò
+// å½’å¹¶æ’åº
 static SPlatformFileInfo *SortList(SPlatformFileInfo *head, EPlatformFileSortMode sortMode)
 {
 	if (PF_SORT_MODE_NONE == sortMode)
@@ -31,7 +31,7 @@ static SPlatformFileInfo *SortList(SPlatformFileInfo *head, EPlatformFileSortMod
 		return head;
 	}
 
-	// ¿ìÂıÖ¸Õë·¨ÕÒµ½ÖĞ¼ä½Úµã
+	// å¿«æ…¢æŒ‡é’ˆæ³•æ‰¾åˆ°ä¸­é—´èŠ‚ç‚¹
 	SPlatformFileInfo *fast = head->next;
 	SPlatformFileInfo *slow = head;
 	while ((fast) && (fast->next))
@@ -46,7 +46,7 @@ static SPlatformFileInfo *SortList(SPlatformFileInfo *head, EPlatformFileSortMod
 	return MergeTwoList(lhs, rhs, sortMode);
 }
 
-// ¹é²¢ÅÅĞòºÏ²¢
+// å½’å¹¶æ’åºåˆå¹¶
 static SPlatformFileInfo *MergeTwoList(SPlatformFileInfo *lhs, SPlatformFileInfo *rhs, EPlatformFileSortMode sortMode)
 {
 	SPlatformFileInfo dummy;
@@ -174,7 +174,7 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 
 	FindClose(hFind);
 
-	// ¶ÔÁ´±í½øĞĞÅÅĞò
+	// å¯¹é“¾è¡¨è¿›è¡Œæ’åº
 	return SortList(dummy.next, sortMode);
 }
 #else
@@ -289,7 +289,7 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 		closedir(dir);
 	}
 
-	// ¶ÔÁ´±í½øĞĞÅÅĞò
+	// å¯¹é“¾è¡¨è¿›è¡Œæ’åº
 	return SortList(dummy.next, sortMode);
 }
 #endif
@@ -357,7 +357,7 @@ void FreeFileInfo(SPlatformFileInfo **hdl)
 
 int PFMakeDirectory(const char *pathName)
 {
-	if (!pathName)
+	if ((!pathName) || (0 == strlen(pathName)))
 	{
 		PBLogOut(PL_LEVEL_WARNING, "pathName not exist!");
 		return 0;
@@ -373,7 +373,7 @@ int PFMakeDirectory(const char *pathName)
 	strcpy(sTmp, pathName);
 	size_t len = strlen(sTmp);
 
-	// ²»Í¬Æ½Ì¨Â·¾¶×ª»»
+	// ä¸åŒå¹³å°è·¯å¾„è½¬æ¢
 	for (size_t i = 0; i < len; ++i)
 	{
 		if (PATH_SPLIT_CHAR_OTHER == sTmp[i])
@@ -581,7 +581,7 @@ static bool RemoveFileRecursive(const char *fileName, bool isRoot)
 
 int PFRemoveFile(const char *fileName)
 {
-	if (!fileName)
+	if ((!fileName) || (0 == strlen(fileName)))
 	{
 		return 0;
 	}
