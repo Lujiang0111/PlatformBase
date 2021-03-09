@@ -1,5 +1,5 @@
 VERSION_X=1
-VERSION_Y=0
+VERSION_Y=1
 VERSION_Z=0
 PROJECT=PlatformBase
 
@@ -19,7 +19,7 @@ PREBUILD_LIB_PATH=../../../../../../../../Versions/Baselib
 PREBUILD_LIBS_BASE=""
 POSTBUILD_PATH=../../../../../../../../Versions/Baselib
 
-ENABLE_PCAP=0
+ENABLE_PCAP=
 
 ifdef ENABLE_PCAP
 PREBUILD_LIBS_PCAP="libpcap 1.9.1 true true false"
