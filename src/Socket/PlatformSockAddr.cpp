@@ -1,4 +1,4 @@
-#include <string.h>
+﻿#include <string.h>
 #include "Socket/IPlatformSockAddrIpv4.h"
 #include "Socket/IPlatformSockAddrIpv6.h"
 
@@ -85,7 +85,7 @@ void PSockAddrDestroy(PSockAddrHandle *pHdl)
 	*pHdl = NULL;
 }
 
-const struct sockaddr *PSockAddrGetNativeAddr(PSockAddrHandle hdl)
+const struct sockaddr *PSockAddrGetNative(PSockAddrHandle hdl)
 {
 	PSockAddrBase *h = reinterpret_cast<PSockAddrBase *>(hdl);
 	return h->GetNativeAddr();
