@@ -1,13 +1,14 @@
-#if (defined(WIN32)) || (defined(_WINDLL))
+ï»¿#if (defined(WIN32)) || (defined(_WINDLL))
 #include <windows.h>
 #else
 #endif
 
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
 #include "Log/IPlatformLogCtx.h"
 
-//ÉèÖÃÆÁÄ»´òÓ¡×ÖÌåÑÕÉ«
+//è®¾ç½®å±å¹•æ‰“å°å­—ä½“é¢œè‰²
 #define C_NONE          "\033[0m"
 #define C_BLUE          "\033[0;34m"
 #define C_BLUE_HL       "\033[1;34m"
@@ -95,7 +96,7 @@ void PlatformLogCtx::PrintScreen() const
 {
 	if (_lostCnt > 0)
 	{
-		printf("\n\n\nERROR log cache full, lost %d logs\n\n\n", _lostCnt);
+		std::cout << "\n\n\nERROR log cache full, lost " << _lostCnt << " logs\n\n\n" << std::endl;
 		return;
 	}
 
@@ -128,32 +129,32 @@ void PlatformLogCtx::PrintScreen() const
 	switch (_level)
 	{
 	case PL_LEVEL_DEBUG:
-		printf("DEBUG ");
+		std::cout << "DEBUG ";
 		break;
 	case PL_LEVEL_INFO:
-		printf("INFO  ");
+		std::cout << "INFO  ";
 		break;
 	case PL_LEVEL_WARNING:
-		printf("WARN  ");
+		std::cout << "WARN  ";
 		break;
 	case PL_LEVEL_ERROR:
-		printf("ERROR ");
+		std::cout << "ERROR ";
 		break;
 	case PL_LEVEL_FATAL:
-		printf("FAULT ");
+		std::cout << "FAULT ";
 		break;
 	default:
-		printf("DEBUG  ");
+		std::cout <<"DEBUG  ";
 		break;
 	}
 
 	if (_fileLine > 0)
 	{
-		printf("%s%d:%s%s", _fileName, _fileLine, _content, "\n");
+		std::cout << _fileName << _fileLine << ":" << _content << std::endl;
 	}
 	else
 	{
-		printf("%s:%s%s", _fileName, _content, "\n");
+		std::cout << _fileName << ":" << _content << std::endl;
 	}
 
 	color = (FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
