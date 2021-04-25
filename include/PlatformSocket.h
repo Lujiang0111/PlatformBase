@@ -123,6 +123,13 @@ extern "C" {
 	PLATFORM_BASE_API void PSockAddrDestroy(PSockAddrHandle *pHdl);
 
 	/************************************************************************
+	*函数功能：	返回PSockAddrHandle实例的ip类型
+	*函数参数：	ip			[IN]	ip地址
+	*返回值：	ip类型
+	************************************************************************/
+	PLATFORM_BASE_API EPSocketInetType PSockAddrGetInetType(PSockAddrHandle hdl);
+
+	/************************************************************************
 	*函数功能：	返回PSockAddrHandle实例的原生struct sockaddr *结构
 	*输入参数:	hdl			[IN]	实例句柄
 	*返回值：	原生struct sockaddr *结构

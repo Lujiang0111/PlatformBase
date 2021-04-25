@@ -1,4 +1,4 @@
-#ifndef I_PLATFORM_SOCK_ADDR_BASE_H_
+﻿#ifndef I_PLATFORM_SOCK_ADDR_BASE_H_
 #define I_PLATFORM_SOCK_ADDR_BASE_H_
 
 #if defined (WIN32) || defined (_WINDLL)
@@ -28,6 +28,7 @@ public:
 	virtual bool Decrease() = 0;
 	virtual int Compare(PSockAddrBase *rhs) = 0;
 
+	virtual EPSocketInetType GetInetType() const = 0;
 	virtual const struct sockaddr *GetNativeAddr() const = 0;
 
 	// for multicast group

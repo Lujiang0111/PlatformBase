@@ -1,6 +1,6 @@
 VERSION_X=1
 VERSION_Y=1
-VERSION_Z=1
+VERSION_Z=2
 PROJECT=PlatformBase
 
 ifneq (,$(wildcard ../../../../../../../../compile.dep))

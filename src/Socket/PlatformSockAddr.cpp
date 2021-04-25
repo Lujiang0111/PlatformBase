@@ -85,6 +85,12 @@ void PSockAddrDestroy(PSockAddrHandle *pHdl)
 	*pHdl = NULL;
 }
 
+EPSocketInetType PSockAddrGetInetType(PSockAddrHandle hdl)
+{
+	PSockAddrBase *h = reinterpret_cast<PSockAddrBase *>(hdl);
+	return h->GetInetType();
+}
+
 const struct sockaddr *PSockAddrGetNative(PSockAddrHandle hdl)
 {
 	PSockAddrBase *h = reinterpret_cast<PSockAddrBase *>(hdl);

@@ -1,4 +1,4 @@
-#include <string.h>
+﻿#include <string.h>
 #include "Socket/IPlatformSockAddrIpv6.h"
 
 static int Ipv6Cmp(struct sockaddr_in6 *lhs, struct sockaddr_in6 *rhs)
@@ -127,6 +127,11 @@ int PSockAddrIpv6::Compare(PSockAddrBase *rhs)
 	}
 
 	return Ipv6Cmp(&_addr, &nRhs->_addr);
+}
+
+EPSocketInetType PSockAddrIpv6::GetInetType() const
+{
+	return PS_INET_TYPE_IPV6;
 }
 
 const struct sockaddr *PSockAddrIpv6::GetNativeAddr() const

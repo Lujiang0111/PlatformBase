@@ -1,4 +1,4 @@
-#include <string.h>
+﻿#include <string.h>
 #include "Socket/IPlatformSockAddrIpv4.h"
 
 static int Ipv4Cmp(struct sockaddr_in *lhs, struct sockaddr_in *rhs)
@@ -125,6 +125,11 @@ int PSockAddrIpv4::Compare(PSockAddrBase *rhs)
 	}
 
 	return Ipv4Cmp(&_addr, &nRhs->_addr);
+}
+
+EPSocketInetType PSockAddrIpv4::GetInetType() const
+{
+	return PS_INET_TYPE_IPV4;
 }
 
 const struct sockaddr *PSockAddrIpv4::GetNativeAddr() const

@@ -1,4 +1,4 @@
-#ifndef I_PLATFORM_SOCK_ADDR_IPV6_H_
+﻿#ifndef I_PLATFORM_SOCK_ADDR_IPV6_H_
 #define I_PLATFORM_SOCK_ADDR_IPV6_H_
 
 #include "Socket/IPlatformSockAddrBase.h"
@@ -14,6 +14,7 @@ public:
 	virtual bool Decrease();
 	virtual int Compare(PSockAddrBase *rhs);
 
+	virtual EPSocketInetType GetInetType() const;
 	virtual const struct sockaddr *GetNativeAddr() const;
 
 	// for multicast group
