@@ -151,6 +151,7 @@
     <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrBase.h" />
     <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrIpv4.h" />
     <ClInclude Include="..\..\..\..\include_internal\Socket\IPlatformSockAddrIpv6.h" />
+    <ClInclude Include="..\..\..\..\include_internal\SyncIo\PlatformSyncIoSelect.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\Base\PlatformBaseApi.cpp" />

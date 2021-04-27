@@ -320,5 +320,10 @@ bool PSockAddrIpv4::Connect(int fd)
 
 int PSockAddrIpv4::Sendto(int fd, const char *buf, int len)
 {
+	if (0 == len)
+	{
+		return 0;
+	}
+
 	return sendto(fd, buf, len, 0, reinterpret_cast<const struct sockaddr *>(&_addr), sizeof(struct sockaddr_in));
 }

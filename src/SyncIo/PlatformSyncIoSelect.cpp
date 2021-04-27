@@ -1,4 +1,4 @@
-#ifdef PLATFORM_SYNC_IO_SELECT
+Ôªø#ifdef PLATFORM_SYNC_IO_SELECT
 
 #if defined (WIN32) || defined (_WINDLL)
 #include <WinSock2.h>
@@ -9,40 +9,7 @@
 #include <unordered_map>
 #include "Base/IPlatformBaseApi.h"
 #include "PlatformSocket.h"
-#include "PlatformSyncIo.h"
-
-typedef struct Event_
-{
-	EventCallback cb;
-	void *privData;
-	int event;
-}SEvent;
-
-class PSIOSelect
-{
-public:
-	PSIOSelect(int TimeoutMs = 0);
-	virtual ~PSIOSelect();
-
-	void SetTimeoutMs(int TimeoutMs);
-	void SetFdCallback(int fd, EventCallback cb, void *privData, int event);
-	void EnableEvent(int fd, int event);
-	void DisableEvent(int fd, int event);
-	EPSIOResultCode Execute();
-
-private:
-	PSIOSelect();
-	PSIOSelect(const PSIOSelect &) = delete;
-	PSIOSelect &operator=(const PSIOSelect &) = delete;
-
-private:
-	int _timeoutMs;
-	std::unordered_map<int, SEvent *> _mapEvents;
-
-#if defined(WIN32) || defined(_WINDLL)
-	int _idleFd;	//windows≤ª÷ß≥÷À˘”–fd_set∂ºø’
-#endif
-};
+#include "SyncIo/PlatformSyncIoSelect.hpp"
 
 PSIOSelect::PSIOSelect(int timeoutMs)
 {
@@ -193,7 +160,7 @@ EPSIOResultCode PSIOSelect::Execute()
 		std::set<int> setRemoveFd;
 		for (auto x = _mapEvents.begin(); x != _mapEvents.end(); ++x)
 		{
-			// œ»¥¶¿Ì–¥
+			// ÂÖàÂ§ÑÁêÜÂÜô
 			if (FD_ISSET(x->first, &wfds))
 			{
 				if (PSIO_RESULT_CODE_FAIL == x->second->cb(x->second->privData, x->first, PSIO_EVENT_WRITE))
@@ -203,7 +170,7 @@ EPSIOResultCode PSIOSelect::Execute()
 				}
 			}
 
-			// ‘Ÿ¥¶¿Ì∂¡
+			// ÂÜçÂ§ÑÁêÜËØª
 			if (FD_ISSET(x->first, &rfds))
 			{
 				if (PSIO_RESULT_CODE_FAIL == x->second->cb(x->second->privData, x->first, PSIO_EVENT_READ))

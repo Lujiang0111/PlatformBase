@@ -49,6 +49,9 @@
     <Filter Include="源文件\SyncIo">
       <UniqueIdentifier>{df7f7627-9bc7-4d2f-a715-fc1b226abcc1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="内部头文件\SyncIo">
+      <UniqueIdentifier>{5b81665a-a800-4a29-8592-c4c31c812757}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\PlatformFile.h">
@@ -92,6 +95,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\PlatformSyncIo.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include_internal\SyncIo\PlatformSyncIoSelect.hpp">
+      <Filter>内部头文件\SyncIo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
