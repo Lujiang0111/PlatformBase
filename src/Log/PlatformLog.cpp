@@ -1,4 +1,4 @@
-#include <string.h>
+ï»¿#include <string.h>
 #include <algorithm>
 #include "File/IPlatformFile.h"
 #include "Log/IPlatformLog.h"
@@ -29,7 +29,7 @@ PlatformLog::PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, u
 	}
 	else
 	{
-		// Ä¬ÈÏ50ms´òÓ¡Ò»´ÎÈÕÖ¾
+		// é»˜è®¤50msæ‰“å°ä¸€æ¬¡æ—¥å¿—
 		_spanMs = 50;
 	}
 
@@ -39,7 +39,7 @@ PlatformLog::PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, u
 	}
 	else
 	{
-		// Ä¬ÈÏÒ»·ÖÖÓÇåÀíÒ»´ÎÈÕÖ¾
+		// é»˜è®¤ä¸€åˆ†é’Ÿæ¸…ç†ä¸€æ¬¡æ—¥å¿—
 		_clearMs = 60000;
 	}
 
@@ -49,7 +49,7 @@ PlatformLog::PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, u
 	}
 	else
 	{
-		// Ä¬ÈÏÈÕÖ¾´¢´æ´óĞ¡Îª5G
+		// é»˜è®¤æ—¥å¿—å‚¨å­˜å¤§å°ä¸º5G
 		_maxLogSize = 5LL << 30;
 	}
 
@@ -59,14 +59,13 @@ PlatformLog::PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, u
 	}
 	else
 	{
-		// Ä¬ÈÏÈÕÖ¾¶ÓÁĞ×î´ó³¤¶ÈÎª10000
+		// é»˜è®¤æ—¥å¿—é˜Ÿåˆ—æœ€å¤§é•¿åº¦ä¸º10000
 		_maxQueLen = 10000;
 	}
 
 	_isRunning = false;
 	_workThread = NULL;
-	_hoursCnt = 0;
-	_fp = NULL;
+	_logHours = 0;
 
 	_logCtxTail = &_logCtxDummy;
 	_logCtxCnt = 0;
@@ -132,7 +131,7 @@ void PlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const c
 		va_copy(vp, vl);
 		int ret = vsnprintf(&_contentBuf[0], _contentBuf.size(), fmt, vp);
 		va_end(vp);
-		if ((ret >= 0) && (ret < _contentBuf.size()))
+		if ((ret >= 0) && (ret < static_cast<int>(_contentBuf.size())))
 		{
 			break;
 		}
@@ -180,14 +179,13 @@ void PlatformLog::Update(const PlatformLogCtx *logCtx)
 {
 	std::chrono::hours logHours = std::chrono::duration_cast<std::chrono::hours>(logCtx->GetTime().time_since_epoch());
 
-	if ((!_fp) || (_hoursCnt != logHours.count()))
+	if ((!_fout.is_open()) || (_logHours != logHours.count()))
 	{
-		_hoursCnt = logHours.count();
+		_logHours = logHours.count();
 
-		if (_fp)
+		if (_fout.is_open())
 		{
-			fclose(_fp);
-			_fp = NULL;
+			_fout.close();
 		}
 
 		const struct tm &logTm = logCtx->GetTm();
@@ -200,7 +198,7 @@ void PlatformLog::Update(const PlatformLogCtx *logCtx)
 		}
 
 		sprintf(logPath + strlen(logPath), "%04d-%02d-%02d-%02d.log", logTm.tm_year + 1900, logTm.tm_mon + 1, logTm.tm_mday, logTm.tm_hour);
-		_fp = fopen(logPath, "a+");
+		_fout.open(logPath, std::fstream::out | std::fstream::app);
 	}
 }
 
@@ -283,7 +281,7 @@ void PlatformLog::WorkThread()
 			}
 
 			Update(logCtx);
-			logCtx->PrintFile(_fp);
+			logCtx->PrintFile(_fout);
 
 			PlatformLogCtx *oldLogCtx = logCtx;
 			logCtx = logCtx->GetNext();
@@ -292,10 +290,9 @@ void PlatformLog::WorkThread()
 
 		if (nowTime > nextClearTime)
 		{
-			if (_fp)
+			if (_fout.is_open())
 			{
-				fclose(_fp);
-				_fp = NULL;
+				_fout.close();
 			}
 
 			DoClear();
@@ -305,10 +302,9 @@ void PlatformLog::WorkThread()
 		nextSpanTime += std::chrono::milliseconds(_spanMs);
 	}
 
-	if (_fp)
+	if (_fout.is_open())
 	{
-		fclose(_fp);
-		_fp = NULL;
+		_fout.close();
 	}
 }
 

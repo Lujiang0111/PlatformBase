@@ -1,8 +1,10 @@
-#ifndef I_LOG_CTX_H_
+Ôªø#ifndef I_LOG_CTX_H_
 #define I_LOG_CTX_H_
 
-#include <chrono>
 #include <time.h>
+#include <fstream>
+#include <chrono>
+#include <string>
 #include "Base/IPlatformBaseApi.h"
 
 class PlatformLogCtx
@@ -13,7 +15,7 @@ public:
 
 	void Init();
 	void PrintScreen() const;
-	void PrintFile(FILE *fp) const;
+	void PrintFile(std::fstream &fout) const;
 
 	const std::chrono::time_point<std::chrono::system_clock> &GetTime() const;
 	const struct tm &GetTm() const;
@@ -32,15 +34,15 @@ private:
 	uint64_t _id;
 	EPlatformLogLevel _level;
 	bool _needPrintScreen;
-	char *_fileName;
+	std::string _fileName;
 	int _fileLine;
-	char *_content;
+	std::string _content;
 
 	int _lostCnt;
 	std::chrono::time_point<std::chrono::system_clock> _time;
 	struct tm _tm;
 
-	// µ•¡¥Ω·ππ
+	// ÂçïÈìæÁªìÊûÑ
 	PlatformLogCtx *_next;
 };
 

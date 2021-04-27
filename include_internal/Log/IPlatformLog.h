@@ -1,4 +1,4 @@
-#ifndef I_PLATFORM_LOG_H_
+﻿#ifndef I_PLATFORM_LOG_H_
 #define I_PLATFORM_LOG_H_
 
 #include <vector>
@@ -47,8 +47,8 @@ private:
 	std::mutex _mutex;
 	std::thread *_workThread;
 
-	int _hoursCnt;
-	FILE *_fp;
+	int _logHours;
+	std::fstream _fout;
 
 	PlatformLogCtx _logCtxDummy;
 	PlatformLogCtx *_logCtxTail;
