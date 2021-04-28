@@ -192,7 +192,7 @@ void PlatformLogCtx::PrintFile(std::fstream &fout) const
 		std::setw(2) << std::setfill('0') << _tm.tm_hour << ":" <<
 		std::setw(2) << std::setfill('0') << _tm.tm_min << ":" <<
 		std::setw(2) << std::setfill('0') << _tm.tm_sec << " " <<
-		logMs.count() % 1000 << " ";
+		std::setw(3) << std::setfill('0') << logMs.count() % 1000 << " ";
 
 	switch (_level)
 	{
