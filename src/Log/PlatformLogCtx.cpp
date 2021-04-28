@@ -185,7 +185,7 @@ void PlatformLogCtx::PrintFile(std::fstream &fout) const
 	}
 
 	std::chrono::milliseconds logMs = std::chrono::duration_cast<std::chrono::milliseconds>(_time.time_since_epoch());
-	fout << _id <<
+	fout << "[" << _id << "] " <<
 		std::setw(4) << std::setfill('0') << _tm.tm_year + 1900 << "-" <<
 		std::setw(2) << std::setfill('0') << _tm.tm_mon + 1 << "-" <<
 		std::setw(2) << std::setfill('0') << _tm.tm_mday << " " <<
