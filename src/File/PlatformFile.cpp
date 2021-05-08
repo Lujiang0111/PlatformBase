@@ -355,7 +355,7 @@ void FreeFileInfo(SPlatformFileInfo **hdl)
 	*hdl = NULL;
 }
 
-int PFMakeDirectory(const char *pathName)
+static int PFMakeDirectoryInternal(const char *pathName, bool endOnParent)
 {
 	if ((!pathName) || (0 == strlen(pathName)))
 	{
@@ -382,32 +382,61 @@ int PFMakeDirectory(const char *pathName)
 		}
 	}
 
-	if (PATH_SPLIT_CHAR != sTmp[len - 1])
+	// 判断一下是否只创建到父目录
+	if (!endOnParent)
 	{
-		sTmp[len] = PATH_SPLIT_CHAR;
-		sTmp[len + 1] = 0;
-		++len;
+		if (PATH_SPLIT_CHAR != sTmp[len - 1])
+		{
+			sTmp[len] = PATH_SPLIT_CHAR;
+			sTmp[len + 1] = 0;
+			++len;
+		}
 	}
 
-	for (size_t i = 1; i < len; ++i)
+	size_t step = 0;
+#if defined(WIN32) || defined(_WINDLL)
+	// 跳过绝对路径的盘符位
+	if ((len >= 3) && (':' == sTmp[1]) && (PATH_SPLIT_CHAR == sTmp[2]))
 	{
-		if (PATH_SPLIT_CHAR == sTmp[i])
+		step = 3;
+	}
+#else
+	// 跳过绝对路径的根目录
+	if (PATH_SPLIT_CHAR == sTmp[0])
+	{
+		step = 1;
+	}
+#endif
+
+	for (; step < len; ++step)
+	{
+		if (PATH_SPLIT_CHAR == sTmp[step])
 		{
-			sTmp[i] = 0;
+			sTmp[step] = 0;
 #if defined(WIN32) || defined(_WINDLL)
 			if ((mkdir(sTmp) != 0) && (EEXIST != errno))
 #else
 			if ((mkdir(sTmp, 0777) != 0) && (EEXIST != errno))
 #endif
 			{
-				PBLogOut(PL_LEVEL_ERROR, "make directory [%s] fail!, errno=%d", pathName, errno);
+				PBLogOut(PL_LEVEL_ERROR, "make directory [%s] fail!, errno=%d", sTmp, errno);
 				return -1;
 			}
-			sTmp[i] = PATH_SPLIT_CHAR;
+			sTmp[step] = PATH_SPLIT_CHAR;
 		}
 	}
 
 	return 0;
+}
+
+int PFMakeDirectory(const char *pathName)
+{
+	return PFMakeDirectoryInternal(pathName, false);
+}
+
+int PFMakeParentDirectory(const char *pathName)
+{
+	return PFMakeDirectoryInternal(pathName, true);
 }
 
 #if defined(WIN32) || defined(_WINDLL)
@@ -594,7 +623,7 @@ int PFRemoveFile(const char *fileName)
 		sRootFileName.pop_back();
 	}
 
-	if (!RemoveFileRecursive(fileName, true))
+	if (!RemoveFileRecursive(sRootFileName.c_str(), true))
 	{
 		return -1;
 	}

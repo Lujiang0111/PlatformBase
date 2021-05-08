@@ -43,6 +43,8 @@ extern "C"
 
 	PLATFORM_BASE_API int PFMakeDirectory(const char *pathName);
 
+	PLATFORM_BASE_API int PFMakeParentDirectory(const char *pathName);
+
 	PLATFORM_BASE_API int PFRemoveFile(const char *fileName);
 
 #ifdef __cplusplus
