@@ -455,7 +455,7 @@ static bool RemoveFileRecursive(const char *fileName, bool isRoot)
 	if (sSearchFileName.length() > MAX_PATH)
 	{
 		PBLogOut(PL_LEVEL_ERROR, "filename too long! filename=%s", fileName);
-		return NULL;
+		return false;
 	}
 
 	// Find the first file in the directory.
@@ -463,7 +463,8 @@ static bool RemoveFileRecursive(const char *fileName, bool isRoot)
 	HANDLE hFind = FindFirstFile(sSearchFileName.c_str(), &ffd);
 	if (INVALID_HANDLE_VALUE == hFind)
 	{
-		return NULL;
+		// 找不到文件，视为删除成功
+		return true;
 	}
 
 	// List all the files in the directory with some info about them.

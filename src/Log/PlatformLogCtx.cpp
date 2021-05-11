@@ -126,14 +126,17 @@ void PlatformLogCtx::PrintScreen() const
 		break;
 	}
 
+	if (_fileName.length() > 0)
+	{
+		std::cout << _fileName << ":";
+	}
+
 	if (_fileLine > 0)
 	{
-		std::cout << _fileName << _fileLine << ", " << _content << std::endl;
+		std::cout << _fileLine << ", ";
 	}
-	else
-	{
-		std::cout << _fileName << ", " << _content << std::endl;
-	}
+
+	std::cout << _content << std::endl;
 
 	color = (FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
@@ -160,14 +163,17 @@ void PlatformLogCtx::PrintScreen() const
 		break;
 	}
 
+	if (_fileName.length() > 0)
+	{
+		std::cout << _fileName << ":";
+	}
+
 	if (_fileLine > 0)
 	{
-		std::cout << _fileName << _fileLine << ", " << _content << C_NONE << std::endl;
+		std::cout << _fileLine << ", ";
 	}
-	else
-	{
-		std::cout << _fileName << ", " << _content << C_NONE << std::endl;
-	}
+
+	std::cout << _content << C_NONE << std::endl;
 #endif
 }
 
@@ -216,14 +222,17 @@ void PlatformLogCtx::PrintFile(std::fstream &fout) const
 		break;
 	}
 
+	if (_fileName.length() > 0)
+	{
+		fout << _fileName << ":";
+	}
+
 	if (_fileLine > 0)
 	{
-		fout << _fileName << _fileLine << ", " << _content << std::endl;
+		fout << _fileLine << ", ";
 	}
-	else
-	{
-		fout << _fileName << ", " << _content << std::endl;
-	}
+
+	fout << _content << std::endl;
 }
 
 const std::chrono::time_point<std::chrono::system_clock> &PlatformLogCtx::GetTime() const
