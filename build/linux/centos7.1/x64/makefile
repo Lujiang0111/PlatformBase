@@ -6,6 +6,7 @@ PROJECT=PlatformBase
 ifneq (,$(wildcard ../../../../../../../../compile.dep))
 	include ../../../../../../../../compile.dep
 else
+	LINK_RELEASE_WL_ADD=,-z,relro,-z,now,-z,noexecstack
 	COMPILE_RELEASE_ITEM=-fstack-protector-all -fPIC -g
 endif
 
@@ -54,32 +55,44 @@ COBJ:=$(CSRC:.c=.o)
 CPPSRC=$(foreach TMP_SRC_DIRS, $(SRC_DIRS), $(wildcard $(TMP_SRC_DIRS)/*.cpp))
 CPPOBJ:=$(CPPSRC:.cpp=.o)
 
-all:prebuild $(TARGET)
+.PHONY: all clean
+
+all: postbuild
+
+release: postbuild_release
+
 prebuild:
 	chmod +x *.sh
 	./prebuild.sh $(PREBUILD_LIB_PATH) $(PREBUILD_LIBS)
 
-$(TARGET):$(COBJ) $(CPPOBJ)
-	$(CXX) -shared -Wl,-soname,$(SONAME) -Wall -g -o $(TARGET) $(COBJ) $(CPPOBJ) $(LIBS)
-	./postbuild.sh $(POSTBUILD_PATH) $(PROJECT) $(VERSION) $(TARGET)
-
-release:prebuild_r $(TARGET_RELEASE)
-prebuild_r:
+prebuild_release:
 	chmod +x *.sh
 	./prebuild.sh $(PREBUILD_LIB_PATH) $(PREBUILD_LIBS) release
 
-$(TARGET_RELEASE):$(COBJ) $(CPPOBJ)
-	$(CXX) -shared -Wl,-soname,$(SONAME)$(LINK_RELEASE_WL_ADD) -Wall -g -o $(TARGET_RELEASE) $(COBJ) $(CPPOBJ) $(LIBS);\
-	strip -s $(TARGET_RELEASE)
+mainbuild: prebuild
+	@$(MAKE) --no-print-directory $(TARGET)
+
+mainbuild_release: prebuild_release
+	@$(MAKE) --no-print-directory $(TARGET_RELEASE)
+
+postbuild: mainbuild
+	./postbuild.sh $(POSTBUILD_PATH) $(PROJECT) $(VERSION) $(TARGET)
+
+postbuild_release: mainbuild_release
 	./postbuild.sh $(POSTBUILD_PATH) $(PROJECT) $(VERSION) $(TARGET_RELEASE) release
 
-%.o:%.cpp
-	$(CXX) $(DEFINES) $(WARNING_SWITCH) $(COMPILE_RELEASE_ITEM) -o $@ -c $< $(INCLUDE) -std=c++11
+$(TARGET): $(COBJ) $(CPPOBJ)
+	$(CXX) -shared -Wl,-soname,$(SONAME) -Wall -g -o $(TARGET) $(COBJ) $(CPPOBJ) $(LIBS)
 
-%.o:%.c
+$(TARGET_RELEASE): $(COBJ) $(CPPOBJ)
+	$(CXX) -shared -Wl,-soname,$(SONAME)$(LINK_RELEASE_WL_ADD) -Wall -g -o $(TARGET_RELEASE) $(COBJ) $(CPPOBJ) $(LIBS);\
+	strip -s $(TARGET_RELEASE)
+
+%.o: %.cpp
+	$(CXX) $(DEFINES) $(WARNING_SWITCH) $(COMPILE_RELEASE_ITEM) $(INCLUDE) -o $@ -c $< -std=c++11
+
+%.o: %.c
 	$(CC) $(DEFINES) $(WARNING_SWITCH) $(COMPILE_RELEASE_ITEM) $(INCLUDE) -o $@ -c $<
-
-.PHONY:clean
 
 clean:
 	-rm -f $(COBJ) $(CPPOBJ) $(TARGET) $(TARGET_RELEASE)
