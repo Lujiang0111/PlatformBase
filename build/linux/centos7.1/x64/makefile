@@ -42,17 +42,17 @@ DEFINES+=-DENABLE_PCAP=1
 LIBS+=-lpcap
 endif
 
+CC:=gcc
+CXX:=g++
 VERSION=$(VERSION_X).$(VERSION_Y).$(VERSION_Z)
 REAL_NAME=lib$(PROJECT).so.$(VERSION)
 SONAME=lib$(PROJECT).so.$(VERSION_X)
 TARGET=../../../../bin/$(REAL_NAME)
 TARGET_RELEASE=../../../../bin/release/$(REAL_NAME)
-CC:=gcc
-CXX:=g++
-SRC_DIRS=../../../../src ../../../../src/*
-CSRC=$(foreach TMP_SRC_DIRS, $(SRC_DIRS), $(wildcard $(TMP_SRC_DIRS)/*.c))
+SRC_DIRS=../../../../src
+CSRC=$(shell find $(SRC_DIRS) -name "*.c")
 COBJ:=$(CSRC:.c=.o)
-CPPSRC=$(foreach TMP_SRC_DIRS, $(SRC_DIRS), $(wildcard $(TMP_SRC_DIRS)/*.cpp))
+CPPSRC=$(shell find $(SRC_DIRS) -name "*.cpp")
 CPPOBJ:=$(CPPSRC:.cpp=.o)
 
 .PHONY: all clean
