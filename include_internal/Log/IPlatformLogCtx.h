@@ -1,8 +1,8 @@
 ﻿#ifndef I_LOG_CTX_H_
 #define I_LOG_CTX_H_
 
+#include <stdio.h>
 #include <time.h>
-#include <fstream>
 #include <chrono>
 #include <string>
 #include "Base/IPlatformBaseApi.h"
@@ -10,12 +10,12 @@
 class PlatformLogCtx
 {
 public:
-	PlatformLogCtx(uint64_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content);
+	PlatformLogCtx(size_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content);
 	virtual ~PlatformLogCtx();
 
 	void Init();
 	void PrintScreen() const;
-	void PrintFile(std::fstream &fout) const;
+	void PrintFile(FILE *fp) const;
 
 	const std::chrono::time_point<std::chrono::system_clock> &GetTime() const;
 	const struct tm &GetTm() const;
@@ -31,7 +31,7 @@ private:
 	PlatformLogCtx& operator=(const PlatformLogCtx&) = delete;
 
 private:
-	uint64_t _id;
+	size_t _id;
 	EPlatformLogLevel _level;
 	bool _needPrintScreen;
 	std::string _fileName;

@@ -96,7 +96,7 @@ static SPlatformFileInfo *MergeTwoList(SPlatformFileInfo *lhs, SPlatformFileInfo
 }
 
 #if defined(WIN32) || defined(_WINDLL)
-static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSortMode sortMode, SPlatformFileInfo *parent, uint64_t &totalSize)
+static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSortMode sortMode, SPlatformFileInfo *parent, size_t &totalSize)
 {
 	std::string sSearchFileName = fileName;
 
@@ -155,7 +155,7 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 			if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
 				node->mode = PF_MODE_DIRECTORY;
-				uint64_t dirSize = 0;
+				size_t dirSize = 0;
 				node->child = SearchFileInfo(node->fullName, sortMode, node, dirSize);
 				node->size += dirSize;
 			}
@@ -178,7 +178,7 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 	return SortList(dummy.next, sortMode);
 }
 #else
-static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSortMode sortMode, SPlatformFileInfo *parent, uint64_t &totalSize)
+static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSortMode sortMode, SPlatformFileInfo *parent, size_t &totalSize)
 {
 	struct stat fileStat;
 	if (0 != lstat(fileName, &fileStat))
@@ -216,7 +216,7 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 		if (S_ISDIR(fileStat.st_mode))
 		{
 			node->mode = PF_MODE_DIRECTORY;
-			uint64_t dirSize = 0;
+			size_t dirSize = 0;
 			node->child = SearchFileInfo(node->fullName, sortMode, node, dirSize);
 			node->size += dirSize;
 		}
@@ -270,7 +270,7 @@ static SPlatformFileInfo *SearchFileInfo(const char *fileName, EPlatformFileSort
 			if (S_ISDIR(fileStat.st_mode))
 			{
 				node->mode = PF_MODE_DIRECTORY;
-				uint64_t dirSize = 0;
+				size_t dirSize = 0;
 				node->child = SearchFileInfo(node->fullName, sortMode, node, dirSize);
 				node->size += dirSize;
 			}
@@ -310,7 +310,7 @@ SPlatformFileInfo *GetFileInfo(const char* fileName, EPlatformFileSortMode sortM
 		sRootFileName.pop_back();
 	}
 
-	uint64_t totalSize = 0;
+	size_t totalSize = 0;
 	return SearchFileInfo(sRootFileName.c_str(), sortMode, NULL, totalSize);
 }
 

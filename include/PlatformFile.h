@@ -29,7 +29,7 @@ extern "C"
 		char *name;							// 文件名
 		char *fullName;						// 包含路径的完整文件名
 		EPlatformFileMode mode;				// 文件类型
-		uint64_t size;						// 如果是普通文件，则代表文件大小；如果是目录，则代表目录的总大小
+		size_t size;						// 如果是普通文件，则代表文件大小；如果是目录，则代表目录的总大小
 		int64_t lastModifyTime;				// 最后修改时间戳
 
 		struct PlatformFileInfo_ *parent;	// 父目录

@@ -12,7 +12,7 @@
 class PlatformLog
 {
 public:
-	PlatformLog(const char *logPath, int64_t spanMs, int64_t clearMs, uint64_t maxLogSize, uint64_t maxQueLen);
+	PlatformLog(const char *logPath, size_t spanMs, size_t clearMs, size_t maxLogSize, size_t maxQueLen);
 	virtual ~PlatformLog();
 
 	bool Start();
@@ -26,7 +26,7 @@ private:
 	PlatformLog(const PlatformLog&) = delete;
 	PlatformLog& operator=(const PlatformLog&) = delete;
 
-	static uint64_t IncreaseId();
+	static size_t IncreaseId();
 
 	void Update(const PlatformLogCtx *logCtx);
 	void DoClear();
@@ -35,24 +35,24 @@ private:
 	void WorkThread();
 
 private:
-	static std::atomic<uint64_t> _id;
+	static std::atomic<size_t> _id;
 
 	std::string _logPath;
-	int64_t _spanMs;
-	int64_t _clearMs;
-	uint64_t _maxLogSize;
-	int64_t _maxQueLen;
+	size_t _spanMs;
+	size_t _clearMs;
+	size_t _maxLogSize;
+	size_t _maxQueLen;
 
 	bool _isRunning;
 	std::mutex _mutex;
 	std::thread *_workThread;
 
 	int _logHours;
-	std::fstream _fout;
+	FILE *_fp;
 
 	PlatformLogCtx _logCtxDummy;
 	PlatformLogCtx *_logCtxTail;
-	int _logCtxCnt;
+	size_t _logCtxCnt;
 
 	std::vector<char> _contentBuf;
 };

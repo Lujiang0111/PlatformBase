@@ -3,7 +3,6 @@
 #else
 #endif
 
-#include <iostream>
 #include <iomanip>
 #include "Log/IPlatformLogCtx.h"
 
@@ -22,7 +21,7 @@ constexpr auto C_MAGENTA_HL	= "\033[1;35m";
 constexpr auto C_YELLOW		= "\033[0;33m";
 constexpr auto C_YELLOW_HL	= "\033[1;33m";
 
-PlatformLogCtx::PlatformLogCtx(uint64_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
+PlatformLogCtx::PlatformLogCtx(size_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
 {
 	_id = id;
 
@@ -74,7 +73,7 @@ void PlatformLogCtx::PrintScreen() const
 {
 	if (_lostCnt > 0)
 	{
-		std::cout << "\n\n\n---log cache full, lost " << _lostCnt << " logs---\n\n" << std::endl;
+		printf("\n\n\n---log cache full, lost %d logs---\n\n\n", _lostCnt);
 		return;
 	}
 
@@ -107,36 +106,38 @@ void PlatformLogCtx::PrintScreen() const
 	switch (_level)
 	{
 	case PL_LEVEL_DEBUG:
-		std::cout << "DEBUG ";
+		printf("DEBUG ");
 		break;
 	case PL_LEVEL_INFO:
-		std::cout << "INFO  ";
+		printf("INFO  ");
 		break;
 	case PL_LEVEL_WARNING:
-		std::cout << "WARN  ";
+		printf("WARN  ");
 		break;
 	case PL_LEVEL_ERROR:
-		std::cout << "ERROR ";
+		printf("ERROR ");
 		break;
 	case PL_LEVEL_FATAL:
-		std::cout << "FAULT ";
+		printf("FAULT ");
 		break;
 	default:
-		std::cout <<"DEBUG  ";
+		printf("DEBUG  ");
 		break;
 	}
 
 	if (_fileName.length() > 0)
 	{
-		std::cout << _fileName << ":";
+		if (_fileLine > 0)
+		{
+			printf("%s:%d, ", _fileName.c_str(), _fileLine);
+		}
+		else
+		{
+			printf("%s, ", _fileName.c_str());
+		}
 	}
 
-	if (_fileLine > 0)
-	{
-		std::cout << _fileLine << ", ";
-	}
-
-	std::cout << _content << std::endl;
+	printf("%s\n", _content.c_str());
 
 	color = (FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
@@ -144,95 +145,94 @@ void PlatformLogCtx::PrintScreen() const
 	switch (_level)
 	{
 	case PL_LEVEL_DEBUG:
-		std::cout << C_GREEN << "DEBUG ";
+		printf("%s%s", C_GREEN, "DEBUG ");
 		break;
 	case PL_LEVEL_INFO:
-		std::cout << C_BLUE << "INFO  ";
+		printf("%s%s", C_BLUE, "INFO  ");
 		break;
 	case PL_LEVEL_WARNING:
-		std::cout << C_YELLOW << "WARN  ";
+		printf("%s%s", C_YELLOW, "WARN  ");
 		break;
 	case PL_LEVEL_ERROR:
-		std::cout << C_RED << "ERROR ";
+		printf("%s%s", C_RED, "ERROR ");
 		break;
 	case PL_LEVEL_FATAL:
-		std::cout << C_RED_HL << "FAULT ";
+		printf("%s%s", C_RED_HL, "FAULT ");
 		break;
 	default:
-		std::cout << C_GREEN << "DEBUG ";
+		printf("%s%s", C_GREEN, "DEBUG ");
 		break;
 	}
 
 	if (_fileName.length() > 0)
 	{
-		std::cout << _fileName << ":";
+		if (_fileLine > 0)
+		{
+			printf("%s:%d, ", _fileName.c_str(), _fileLine);
+		}
+		else
+		{
+			printf("%s, ", _fileName.c_str());
+		}
 	}
 
-	if (_fileLine > 0)
-	{
-		std::cout << _fileLine << ", ";
-	}
-
-	std::cout << _content << C_NONE << std::endl;
+	printf("%s%s\n", _content.c_str(), C_NONE);
 #endif
 }
 
-void PlatformLogCtx::PrintFile(std::fstream &fout) const
+void PlatformLogCtx::PrintFile(FILE *fp) const
 {
-	if (!fout.is_open())
+	if (!fp)
 	{
 		return;
 	}
 
 	if (_lostCnt > 0)
 	{
-		fout << "\n\n\n---log cache full, lost " << _lostCnt << " logs---\n\n" << std::endl;
+		fprintf(fp, "\n\n\n---log cache full, lost %d logs---\n\n\n", _lostCnt);
 		return;
 	}
 
 	std::chrono::milliseconds logMs = std::chrono::duration_cast<std::chrono::milliseconds>(_time.time_since_epoch());
-	fout << "[" << _id << "] " <<
-		std::setw(4) << std::setfill('0') << _tm.tm_year + 1900 << "-" <<
-		std::setw(2) << std::setfill('0') << _tm.tm_mon + 1 << "-" <<
-		std::setw(2) << std::setfill('0') << _tm.tm_mday << " " <<
-		std::setw(2) << std::setfill('0') << _tm.tm_hour << ":" <<
-		std::setw(2) << std::setfill('0') << _tm.tm_min << ":" <<
-		std::setw(2) << std::setfill('0') << _tm.tm_sec << " " <<
-		std::setw(3) << std::setfill('0') << logMs.count() % 1000 << " ";
+	fprintf(fp, "[%zu] %04d-%02d-%02d %02d:%02d:%02d %03d ", _id,
+		_tm.tm_year + 1900, _tm.tm_mon + 1, _tm.tm_mday, _tm.tm_hour, _tm.tm_min, _tm.tm_sec, static_cast<int>(logMs.count() % 1000));
 
 	switch (_level)
 	{
 	case PL_LEVEL_DEBUG:
-		fout << "DEBUG ";
+		fprintf(fp, "DEBUG ");
 		break;
 	case PL_LEVEL_INFO:
-		fout << "INFO  ";
+		fprintf(fp, "INFO  ");
 		break;
 	case PL_LEVEL_WARNING:
-		fout << "WARN  ";
+		fprintf(fp, "WARN  ");
 		break;
 	case PL_LEVEL_ERROR:
-		fout << "ERROR ";
+		fprintf(fp, "ERROR ");
 		break;
 	case PL_LEVEL_FATAL:
-		fout << "FAULT ";
+		fprintf(fp, "FAULT ");
 		break;
 	default:
-		fout << "DEBUG ";
+		fprintf(fp, "DEBUG ");
 		break;
 	}
 
 	if (_fileName.length() > 0)
 	{
-		fout << _fileName << ":";
+		if (_fileLine > 0)
+		{
+			fprintf(fp, "%s:%d, ", _fileName.c_str(), _fileLine);
+		}
+		else
+		{
+			fprintf(fp, "%s, ", _fileName.c_str());
+		}
 	}
 
-	if (_fileLine > 0)
-	{
-		fout << _fileLine << ", ";
-	}
-
-	fout << _content << std::endl;
+	fprintf(fp, "%s\n", _content.c_str());
+	fflush(fp);
 }
 
 const std::chrono::time_point<std::chrono::system_clock> &PlatformLogCtx::GetTime() const

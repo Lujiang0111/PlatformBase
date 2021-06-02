@@ -1,4 +1,4 @@
-#ifndef PLATFORM_LOG_H_
+ï»¿#ifndef PLATFORM_LOG_H_
 #define PLATFORM_LOG_H_
 
 #include "PlatformBaseApi.h"
@@ -11,20 +11,20 @@ extern "C"
 	typedef void *PlatformLogHandle;
 
 	/*****************************
-	´´½¨ÈÕÖ¾¾ä±ú
-	logPath		[in]	ÈÕÖ¾´æ·ÅÂ·¾¶
-	spanMs		[in]	ÈÕÖ¾´òÓ¡ÖÜÆÚ
-	return				ÈÕÖ¾¾ä±ú
+	åˆ›å»ºæ—¥å¿—å¥æŸ„
+	logPath		[in]	æ—¥å¿—å­˜æ”¾è·¯å¾„
+	spanMs		[in]	æ—¥å¿—æ‰“å°å‘¨æœŸ
+	return				æ—¥å¿—å¥æŸ„
 	*****************************/
-	PLATFORM_BASE_API PlatformLogHandle PlatformLogCreate(const char *logPath, int64_t spanMs, int64_t clearMs, int64_t maxLogSize);
+	PLATFORM_BASE_API PlatformLogHandle PlatformLogCreate(const char *logPath, size_t spanMs, size_t clearMs, size_t maxLogSize);
 
 	/*****************************
-	Ïú»Ù´´½¨ÈÕÖ¾¾ä±ú
+	é”€æ¯åˆ›å»ºæ—¥å¿—å¥æŸ„
 	*****************************/
 	PLATFORM_BASE_API void PlatformLogDestroy(PlatformLogHandle *hdl);
 
 	/*****************************
-	¼ÇÂ¼ÈÕÖ¾Ïà¹Ø½Ó¿Ú
+	è®°å½•æ—¥å¿—ç›¸å…³æ¥å£
 	*****************************/
 	PLATFORM_BASE_API void PlatformLogSend(PlatformLogHandle hdl, EPlatformLogLevel level, int needPrintScreen, const char *fileName, int fileLine, const char *fmt, ...);
 	PLATFORM_BASE_API void PlatformLogSendVa(PlatformLogHandle hdl, EPlatformLogLevel level, int needPrintScreen, const char *fileName, int fileLine, const char *fmt, va_list vl);

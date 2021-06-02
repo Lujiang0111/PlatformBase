@@ -93,6 +93,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>PLATFORM_BASE_EXPORT;PLATFORM_SYNC_IO_SELECT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
