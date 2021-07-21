@@ -4,23 +4,22 @@
 #include <stdio.h>
 #include <time.h>
 #include <chrono>
-#include <string>
+#include <vector>
 #include "Base/IPlatformBaseApi.h"
 
 class PlatformLogCtx
 {
 public:
-	PlatformLogCtx(size_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content);
+	PlatformLogCtx(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *fmt, va_list vl);
 	virtual ~PlatformLogCtx();
 
-	void Init();
 	void PrintScreen() const;
 	void PrintFile(FILE *fp) const;
 
+	void SetId(size_t id);
+
 	const std::chrono::time_point<std::chrono::system_clock> &GetTime() const;
 	const struct tm &GetTm() const;
-	bool NeedPrintScreen() const;
-	void AddLostCnt();
 
 	PlatformLogCtx *GetNext();
 	void SetNext(PlatformLogCtx *next);
@@ -36,9 +35,8 @@ private:
 	bool _needPrintScreen;
 	std::string _fileName;
 	int _fileLine;
-	std::string _content;
+	std::vector<char> _content;
 
-	int _lostCnt;
 	std::chrono::time_point<std::chrono::system_clock> _time;
 	struct tm _tm;
 

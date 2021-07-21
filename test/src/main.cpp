@@ -1,4 +1,4 @@
-#include <signal.h>
+﻿#include <signal.h>
 #include <iostream>
 #include "PlatformSocket.h"
 #include "TestFile.h"
@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 			"6: Test Udp Client\n" <<
 			"7: Test Pcap IP Port\n" <<
 			"8: Test Pcap Filter\n" <<
+			"9: Test Multithread Fast Logging\n" <<
 			"Input TestNo:";
 		std::cin >> testNo;
 	}
@@ -69,6 +70,9 @@ int main(int argc, char *argv[])
 		TestPcapFilter(argc, argv);
 		break;
 #endif
+	case 9:
+		TestMultiThreadLogLimit(argc, argv);
+		break;
 	default:
 		std::cout << "out of range, byebye!\n";
 		break;

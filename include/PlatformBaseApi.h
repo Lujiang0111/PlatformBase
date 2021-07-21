@@ -1,4 +1,4 @@
-#ifndef PLATFORM_BASE_API_H_
+ï»¿#ifndef PLATFORM_BASE_API_H_
 #define PLATFORM_BASE_API_H_
 
 #include <stdint.h>
@@ -29,9 +29,9 @@ extern "C"
 	}EPlatformLogLevel;
 
 	/*****************************
-	ÉèÖÃPlatformBase¿âÄÚÈÕÖ¾Êä³ö»Øµ÷
+	è®¾ç½®PlatformBaseåº“å†…æ—¥å¿—è¾“å‡ºå›žè°ƒ
 	*****************************/
-	PLATFORM_BASE_API void SetPlatformBaseLogSetCallback(void(*cb)(EPlatformLogLevel level, const char *fmt, va_list vl));
+	PLATFORM_BASE_API void PlatformBaseLogSetCallback(void(*cb)(EPlatformLogLevel level, const char *fmt, va_list vl));
 
 #ifdef __cplusplus
 }

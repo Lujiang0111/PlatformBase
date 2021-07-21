@@ -206,7 +206,14 @@ int PSockAddrDecrease(PSockAddrHandle hdl)
 int PSockAddrCompare(PSockAddrHandle lhs, PSockAddrHandle rhs)
 {
 	PSockAddrBase *h = reinterpret_cast<PSockAddrBase *>(lhs);
-	return h->Compare(reinterpret_cast<PSockAddrBase *>(rhs));
+	if (!h)
+	{
+		return -2;
+	}
+	else
+	{
+		return h->Compare(reinterpret_cast<PSockAddrBase *>(rhs));
+	}
 }
 
 int PSockAddrBind(int fd, PSockAddrHandle serverHdl, PSockAddrHandle localHdl)

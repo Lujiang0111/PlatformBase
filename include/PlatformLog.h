@@ -13,10 +13,12 @@ extern "C"
 	/*****************************
 	创建日志句柄
 	logPath		[in]	日志存放路径
-	spanMs		[in]	日志打印周期
+	clearMs		[in]	日志清理周期
+	maxSize		[in]	日志最大存放空间，单位字节
+	maxCount	[in]	单次处理的最大日志数，为0则由库内部自动设置
 	return				日志句柄
 	*****************************/
-	PLATFORM_BASE_API PlatformLogHandle PlatformLogCreate(const char *logPath, size_t spanMs, size_t clearMs, size_t maxLogSize);
+	PLATFORM_BASE_API PlatformLogHandle PlatformLogCreate(const char *logPath, size_t clearMs, size_t maxSize, size_t maxCount);
 
 	/*****************************
 	销毁创建日志句柄

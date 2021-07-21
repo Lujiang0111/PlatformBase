@@ -3,10 +3,18 @@
 #else
 #endif
 
+#include <string.h>
 #include <iomanip>
 #include "Log/IPlatformLogCtx.h"
 
-//设置屏幕打印字体颜色
+// 日志等级
+constexpr auto L_DEBUG		= "DEBUG ";
+constexpr auto L_INFO		= "INFO  ";
+constexpr auto L_WARNING	= "WARN  ";
+constexpr auto L_ERROR		= "ERROR ";
+constexpr auto L_FAULT		= "FAULT ";
+
+// 屏幕打印字体颜色
 constexpr auto C_NONE		= "\033[0m";
 constexpr auto C_BLUE		= "\033[0;34m";
 constexpr auto C_BLUE_HL	= "\033[1;34m";
@@ -21,9 +29,9 @@ constexpr auto C_MAGENTA_HL	= "\033[1;35m";
 constexpr auto C_YELLOW		= "\033[0;33m";
 constexpr auto C_YELLOW_HL	= "\033[1;33m";
 
-PlatformLogCtx::PlatformLogCtx(size_t id, EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
+PlatformLogCtx::PlatformLogCtx(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *fmt, va_list vl)
 {
-	_id = id;
+	_id = 0;
 
 	_level = level;
 	if (_level < PL_LEVEL_DEBUG)
@@ -43,37 +51,61 @@ PlatformLogCtx::PlatformLogCtx(size_t id, EPlatformLogLevel level, bool needPrin
 	}
 
 	_fileLine = fileLine;
-
-	if (content)
-	{
-		_content = content;
-	}
-
-	_lostCnt = 0;
-	_time = std::chrono::system_clock::now();
-
+	_content.assign(1024, 0);
 	_next = NULL;
-}
 
-PlatformLogCtx::~PlatformLogCtx()
-{
-}
-
-void PlatformLogCtx::Init()
-{
+	_time = std::chrono::system_clock::now();
 	time_t logTime = std::chrono::system_clock::to_time_t(_time);
 #if defined(WIN32) || defined(_WINDLL)
 	localtime_s(&_tm, &logTime);
 #else
 	localtime_r(&logTime, &_tm);
 #endif
+
+	if (!fmt)
+	{
+		return;
+	}
+
+	if (vl)
+	{
+		while (true)
+		{
+			va_list vp;
+			va_copy(vp, vl);
+			int ret = vsnprintf(&_content[0], _content.size(), fmt, vp);
+			va_end(vp);
+			if ((ret >= 0) && (ret < static_cast<int>(_content.size())))
+			{
+				break;
+			}
+
+			if (ret > 0)
+			{
+				_content.resize(ret + 1);
+			}
+			else
+			{
+				return;
+			}
+		}
+	}
+	else
+	{
+		_content.resize(strlen(fmt) + 1);
+		memcpy(&_content[0], fmt, strlen(fmt) + 1);
+	}
+}
+
+PlatformLogCtx::~PlatformLogCtx()
+{
+
 }
 
 void PlatformLogCtx::PrintScreen() const
 {
-	if (_lostCnt > 0)
+	if (!_needPrintScreen)
 	{
-		printf("\n\n\n---log cache full, lost %d logs---\n\n\n", _lostCnt);
 		return;
 	}
 
@@ -103,25 +135,26 @@ void PlatformLogCtx::PrintScreen() const
 	}
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 
+	const char *cLevel = nullptr;
 	switch (_level)
 	{
 	case PL_LEVEL_DEBUG:
-		printf("DEBUG ");
+		cLevel = L_DEBUG;
 		break;
 	case PL_LEVEL_INFO:
-		printf("INFO  ");
+		cLevel = L_INFO;
 		break;
 	case PL_LEVEL_WARNING:
-		printf("WARN  ");
+		cLevel = L_WARNING;
 		break;
 	case PL_LEVEL_ERROR:
-		printf("ERROR ");
+		cLevel = L_ERROR;
 		break;
 	case PL_LEVEL_FATAL:
-		printf("FAULT ");
+		cLevel = L_FAULT;
 		break;
 	default:
-		printf("DEBUG  ");
+		cLevel = L_DEBUG;
 		break;
 	}
 
@@ -129,38 +162,48 @@ void PlatformLogCtx::PrintScreen() const
 	{
 		if (_fileLine > 0)
 		{
-			printf("%s:%d, ", _fileName.c_str(), _fileLine);
+			printf("%s%s:%d, %s\n", cLevel, _fileName.c_str(), _fileLine, &_content[0]);
 		}
 		else
 		{
-			printf("%s, ", _fileName.c_str());
+			printf("%s%s, %s\n", cLevel, _fileName.c_str(), &_content[0]);
 		}
 	}
-
-	printf("%s\n", _content.c_str());
+	else
+	{
+		printf("%s%s\n", cLevel, &_content[0]);
+	}
 
 	color = (FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 #else
+	const char *cLevel = nullptr;
+	const char *cColor = nullptr;
 	switch (_level)
 	{
 	case PL_LEVEL_DEBUG:
-		printf("%s%s", C_GREEN, "DEBUG ");
+		cLevel = L_DEBUG;
+		cColor = C_GREEN;
 		break;
 	case PL_LEVEL_INFO:
-		printf("%s%s", C_BLUE, "INFO  ");
+		cLevel = L_INFO;
+		cColor = C_BLUE;
 		break;
 	case PL_LEVEL_WARNING:
-		printf("%s%s", C_YELLOW, "WARN  ");
+		cLevel = L_WARNING;
+		cColor = C_YELLOW;
 		break;
 	case PL_LEVEL_ERROR:
-		printf("%s%s", C_RED, "ERROR ");
+		cLevel = L_ERROR;
+		cColor = C_RED;
 		break;
 	case PL_LEVEL_FATAL:
-		printf("%s%s", C_RED_HL, "FAULT ");
+		cLevel = L_FAULT;
+		cColor = C_RED_HL;
 		break;
 	default:
-		printf("%s%s", C_GREEN, "DEBUG ");
+		cLevel = L_DEBUG;
+		cColor = C_GREEN;
 		break;
 	}
 
@@ -168,15 +211,17 @@ void PlatformLogCtx::PrintScreen() const
 	{
 		if (_fileLine > 0)
 		{
-			printf("%s:%d, ", _fileName.c_str(), _fileLine);
+			printf("%s%s%s:%d, %s%s\n", cColor, cLevel, _fileName.c_str(), _fileLine, &_content[0], C_NONE);
 		}
 		else
 		{
-			printf("%s, ", _fileName.c_str());
+			printf("%s%s%s, %s%s\n", cColor, cLevel, _fileName.c_str(), &_content[0], C_NONE);
 		}
 	}
-
-	printf("%s%s\n", _content.c_str(), C_NONE);
+	else
+	{
+		printf("%s%s%s%s\n", cColor, cLevel, &_content[0], C_NONE);
+	}
 #endif
 }
 
@@ -184,12 +229,6 @@ void PlatformLogCtx::PrintFile(FILE *fp) const
 {
 	if (!fp)
 	{
-		return;
-	}
-
-	if (_lostCnt > 0)
-	{
-		fprintf(fp, "\n\n\n---log cache full, lost %d logs---\n\n\n", _lostCnt);
 		return;
 	}
 
@@ -231,8 +270,13 @@ void PlatformLogCtx::PrintFile(FILE *fp) const
 		}
 	}
 
-	fprintf(fp, "%s\n", _content.c_str());
+	fprintf(fp, "%s\n", &_content[0]);
 	fflush(fp);
+}
+
+void PlatformLogCtx::SetId(size_t id)
+{
+	_id = id;
 }
 
 const std::chrono::time_point<std::chrono::system_clock> &PlatformLogCtx::GetTime() const
@@ -243,16 +287,6 @@ const std::chrono::time_point<std::chrono::system_clock> &PlatformLogCtx::GetTim
 const struct tm &PlatformLogCtx::GetTm() const
 {
 	return _tm;
-}
-
-bool PlatformLogCtx::NeedPrintScreen() const
-{
-	return _needPrintScreen;
-}
-
-void PlatformLogCtx::AddLostCnt()
-{
-	++_lostCnt;
 }
 
 PlatformLogCtx *PlatformLogCtx::GetNext()

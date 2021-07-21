@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include "PlatformBaseApi.h"
 
 void PBLogCbDefault(EPlatformLogLevel level, const char *fmt, va_list vl)
@@ -21,7 +21,7 @@ void PBLogOut(EPlatformLogLevel level, const char *fmt, ...)
 	va_end(vl);
 }
 
-void SetPlatformBaseLogSetCallback(void(*cb)(EPlatformLogLevel level, const char *fmt, va_list vl))
+void PlatformBaseLogSetCallback(void(*cb)(EPlatformLogLevel level, const char *fmt, va_list vl))
 {
 	pBLogCb = cb;
 }

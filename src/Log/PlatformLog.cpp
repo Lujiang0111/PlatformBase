@@ -3,177 +3,100 @@
 #include "File/IPlatformFile.h"
 #include "Log/IPlatformLog.h"
 
-std::atomic<size_t> PlatformLog::_id(0);
+size_t PlatformLog::_id(0);
 
-PlatformLog::PlatformLog(const char* logPath, size_t spanMs, size_t clearMs, size_t maxLogSize, size_t maxQueLen)
-	: _logCtxDummy(0, PL_LEVEL_DEBUG, true, NULL, 0, NULL)
+PlatformLog::PlatformLog(const char *logPath, size_t clearMs, size_t maxSize, size_t maxCount)
+	: _logDummy(PL_LEVEL_DEBUG, true, nullptr, 0, nullptr, nullptr)
 {
-	if (logPath)
-	{
-		_logPath = logPath;
-	}
-	else
-	{
-		_logPath = "Log";
-	}
-
+	_logPath = (logPath) ? logPath : "Log";
 	std::replace(_logPath.begin(), _logPath.end(), PATH_SPLIT_CHAR_OTHER, PATH_SPLIT_CHAR);
 	if (PATH_SPLIT_CHAR != _logPath[_logPath.length() - 1])
 	{
 		_logPath += PATH_SPLIT_CHAR;
 	}
 
-	if (spanMs > 0)
-	{
-		_spanMs = spanMs;
-	}
-	else
-	{
-		// 默认50ms打印一次日志
-		_spanMs = 50;
-	}
+	_clearMs = (clearMs > 0) ? clearMs : 60000;
+	_maxSize = (maxSize > 0) ? maxSize : (5LL << 30);
+	_maxCount = (maxCount > 0) ? maxCount : 10000;
 
-	if (clearMs > 0)
-	{
-		_clearMs = clearMs;
-	}
-	else
-	{
-		// 默认一分钟清理一次日志
-		_clearMs = 60000;
-	}
-
-	if (maxLogSize > 0)
-	{
-		_maxLogSize = maxLogSize;
-	}
-	else
-	{
-		// 默认日志储存大小为5G
-		_maxLogSize = 5LL << 30;
-	}
-
-	if (maxQueLen > 0)
-	{
-		_maxQueLen = maxQueLen;
-	}
-	else
-	{
-		// 默认日志队列最大长度为10000
-		_maxQueLen = 10000;
-	}
-
-	_isRunning = false;
-	_workThread = NULL;
+	_bWorkThread = false;
 	_logHours = 0;
 	_fp = nullptr;
 
-	_logCtxTail = &_logCtxDummy;
-	_logCtxCnt = 0;
+	_isLogFull = false;
 
-	_contentBuf.resize(1);
+	_logTail = &_logDummy;
+	_logInCnt = 0;
+	_isLogReady = false;
 }
 
 PlatformLog::~PlatformLog()
 {
 	Stop();
-
-	PlatformLogCtx *head = _logCtxDummy.GetNext();
-	while (head)
-	{
-		PlatformLogCtx *oldLogCtx = head;
-		head = head->GetNext();
-		delete oldLogCtx;
-	}
 }
 
 bool PlatformLog::Start()
 {
-	if (_isRunning)
-	{
-		return true;
-	}
-
-	_isRunning = true;
 	PFMakeDirectory(_logPath.c_str());
-	_workThread = new std::thread(WorkThreadEntry, this);
+
+	_bWorkThread = true;
+	_workThread = std::thread(&PlatformLog::WorkThread, this);
 
 	return true;
 }
 
 void PlatformLog::Stop()
 {
-	if (!_isRunning)
+	_bWorkThread = false;
+	_isLogReady = true;
+	_condLog.notify_all();
+	if (_workThread.joinable())
 	{
-		return;
+		_workThread.join();
 	}
-	_isRunning = false;
 
-	if (_workThread)
+	PlatformLogCtx *head = _logDummy.GetNext();
+	while (head)
 	{
-		_workThread->join();
-		delete _workThread;
-		_workThread = NULL;
+		PlatformLogCtx *logCtx = head;
+		head = head->GetNext();
+		delete logCtx;
 	}
+	_logTail = nullptr;
+	_logInCnt = 0;
+	_isLogReady = false;
 }
 
 void PlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *fmt, va_list vl)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
-	if (_logCtxCnt >= _maxQueLen)
+	if (!_bWorkThread || _isLogFull)
 	{
-		_logCtxTail->AddLostCnt();
+		std::lock_guard<std::mutex> lock(_mutLog);
+		++_id;
+		++_logInCnt;
 		return;
 	}
 
-	while (true)
+	PlatformLogCtx *logCtx = new PlatformLogCtx(level, needPrintScreen, fileName, fileLine, fmt, vl);
+
 	{
-		va_list vp;
-		va_copy(vp, vl);
-		int ret = vsnprintf(&_contentBuf[0], _contentBuf.size(), fmt, vp);
-		va_end(vp);
-		if ((ret >= 0) && (ret < static_cast<int>(_contentBuf.size())))
+		std::lock_guard<std::mutex> lock(_mutLog);
+		++_id;
+		logCtx->SetId(_id);
+
+		logCtx->PrintScreen();
+
+		++_logInCnt;
+		if (_logInCnt > _maxCount)
 		{
-			break;
+			_isLogFull = true;
 		}
 
-		if (ret > 0)
-		{
-			_contentBuf.resize(ret + 1);
-		}
-		else
-		{
-			return;
-		}
+		_logTail->SetNext(logCtx);
+		_logTail = logCtx;
+		_isLogReady = true;
+		_condLog.notify_one();
 	}
-
-	auto id = IncreaseId();
-	PlatformLogCtx *logCtx = new PlatformLogCtx(id, level, needPrintScreen, fileName, fileLine, &_contentBuf[0]);
-	_logCtxTail->SetNext(logCtx);
-	_logCtxTail = logCtx;
-	++_logCtxCnt;
-}
-
-void PlatformLog::SendLog(EPlatformLogLevel level, bool needPrintScreen, const char *fileName, int fileLine, const char *content)
-{
-	std::lock_guard<std::mutex> lock(_mutex);
-
-	if (_logCtxCnt >= _maxQueLen)
-	{
-		_logCtxTail->AddLostCnt();
-		return;
-	}
-
-	auto id = IncreaseId();
-	PlatformLogCtx *logCtx = new PlatformLogCtx(id, level, needPrintScreen, fileName, fileLine, content);
-	_logCtxTail->SetNext(logCtx);
-	_logCtxTail = logCtx;
-	++_logCtxCnt;
-}
-
-size_t PlatformLog::IncreaseId()
-{
-	return ++_id;
 }
 
 void PlatformLog::Update(const PlatformLogCtx *logCtx)
@@ -230,67 +153,23 @@ void PlatformLog::DoClear()
 		return;
 	}
 
-	if (fileInfo->size > _maxLogSize)
+	if (fileInfo->size > _maxSize)
 	{
-		size_t clearSize = fileInfo->size - _maxLogSize / 10 * 8;
+		size_t clearSize = fileInfo->size - _maxSize / 10 * 8;
 		ClearLog(fileInfo, clearSize);
 	}
 
 	FreeFileInfo(&fileInfo);
 }
 
-void PlatformLog::WorkThreadEntry(void *hdl)
-{
-	PlatformLog *h = (PlatformLog *)hdl;
-	return h->WorkThread();
-}
-
 void PlatformLog::WorkThread()
 {
 	std::chrono::time_point<std::chrono::steady_clock> nowTime = std::chrono::steady_clock::now();
-	std::chrono::time_point<std::chrono::steady_clock> nextSpanTime = nowTime + std::chrono::milliseconds(_spanMs);
-	std::chrono::time_point<std::chrono::steady_clock> nextClearTime = nowTime + std::chrono::milliseconds(_clearMs);
-	while (_isRunning)
+	std::chrono::time_point<std::chrono::steady_clock> nextClearTime = nowTime;
+	while (_bWorkThread)
 	{
 		nowTime = std::chrono::steady_clock::now();
-		if (nextSpanTime > nowTime)
-		{
-			std::this_thread::sleep_for(nextSpanTime - nowTime);
-		}
-		else
-		{
-			nextSpanTime = nowTime;
-			if (nowTime > nextClearTime)
-			{
-				nextClearTime = nowTime + std::chrono::milliseconds(_spanMs);
-			}
-		}
-
-		_mutex.lock();
-		PlatformLogCtx *logCtx = _logCtxDummy.GetNext();
-		_logCtxDummy.SetNext(NULL);
-
-		_logCtxTail = &_logCtxDummy;
-		_logCtxCnt = 0;
-		_mutex.unlock();
-
-		while (logCtx)
-		{
-			logCtx->Init();
-			if (logCtx->NeedPrintScreen())
-			{
-				logCtx->PrintScreen();
-			}
-
-			Update(logCtx);
-			logCtx->PrintFile(_fp);
-
-			PlatformLogCtx *oldLogCtx = logCtx;
-			logCtx = logCtx->GetNext();
-			delete oldLogCtx;
-		}
-
-		if (nowTime > nextClearTime)
+		if (nowTime >= nextClearTime)
 		{
 			if (_fp)
 			{
@@ -299,10 +178,54 @@ void PlatformLog::WorkThread()
 			}
 
 			DoClear();
-			nextClearTime += std::chrono::milliseconds(_clearMs);
+			nextClearTime = nowTime + std::chrono::milliseconds(_clearMs);
 		}
 
-		nextSpanTime += std::chrono::milliseconds(_spanMs);
+		size_t logCnt = 0;
+		PlatformLogCtx *logCtx = nullptr;
+		{
+			std::unique_lock<std::mutex> lock(_mutLog);
+			_condLog.wait(lock, [this] {return _isLogReady; });
+			logCtx = _logDummy.GetNext();
+			logCnt = _logInCnt;
+
+			_logDummy.SetNext(nullptr);
+			_logTail = &_logDummy;
+			_logInCnt = 0;
+			_isLogReady = false;
+			if (_isLogFull)
+			{
+				_isLogFull = false;
+			}
+		}
+
+		if (logCnt > _maxCount)
+		{
+			printf("\n\n\n---log cache full, lost %zu logs---\n\n\n", logCnt);
+			if (_fp)
+			{
+				fprintf(_fp, "\n\n\n---log cache full, lost %zu logs---\n\n\n", logCnt);
+			}
+
+			while (logCtx)
+			{
+				PlatformLogCtx *oldLogCtx = logCtx;
+				logCtx = logCtx->GetNext();
+				delete oldLogCtx;
+			}
+		}
+		else
+		{
+			while (logCtx)
+			{
+				Update(logCtx);
+				logCtx->PrintFile(_fp);
+
+				PlatformLogCtx *oldLogCtx = logCtx;
+				logCtx = logCtx->GetNext();
+				delete oldLogCtx;
+			}
+		}
 	}
 
 	if (_fp)
@@ -313,9 +236,9 @@ void PlatformLog::WorkThread()
 }
 
 /******************************  C API START  ******************************/
-PlatformLogHandle PlatformLogCreate(const char *logPath, size_t spanMs, size_t clearMs, size_t maxLogSize)
+PlatformLogHandle PlatformLogCreate(const char *logPath, size_t clearMs, size_t maxSize, size_t maxCount)
 {
-	PlatformLog *h = new PlatformLog(logPath, spanMs, clearMs, maxLogSize, 10000);
+	PlatformLog *h = new PlatformLog(logPath, clearMs, maxSize, maxCount);
 	h->Start();
 
 	return h;
@@ -331,7 +254,7 @@ void PlatformLogDestroy(PlatformLogHandle *hdl)
 	PlatformLog *h = (PlatformLog *)(*hdl);
 	delete h;
 
-	*hdl = NULL;
+	*hdl = nullptr;
 }
 
 void PlatformLogSend(PlatformLogHandle hdl, EPlatformLogLevel level, int needPrintScreen, const char *fileName, int fileLine, const char *fmt, ...)
@@ -367,6 +290,6 @@ void PlatformLogSendContent(PlatformLogHandle hdl, EPlatformLogLevel level, int 
 		return;
 	}
 
-	h->SendLog(level, needPrintScreen, fileName, fileLine, content);
+	h->SendLog(level, needPrintScreen, fileName, fileLine, content, nullptr);
 }
 /*******************************  C API END  *******************************/
